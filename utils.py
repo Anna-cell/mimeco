@@ -11,8 +11,6 @@ from sklearn import metrics
 import mocbapy
 from mocbapy.EcosystemModel import create_model, bensolve_default_options
 import mocbapy.analysis
-import warnings
-import cobra
 import math
 
 
@@ -31,6 +29,7 @@ def create_ecosystem_metabolic_dict(model1, model2):
     metabolic_dict : dictionnary {(met_id, model): met_id}
         Dictionnary of all metabolites of the inputted models, and how to name them in the ecosystem model. 
     """
+
     model1_metabolites = []
     for met in model1.metabolites:
         model1_metabolites.append((met.id, model1))
@@ -62,8 +61,8 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint):
     constrained_medium_dict : dictionnary {met_id:(lower_bound,upper_bound)}
         Guide constraint of the ecosystem medium based on inputted medium data. 
         Controls fluxes of metabolites entering the emodels external environment.
-
     """
+
     constrained_medium_dict = {}
     for reac in model.exchanges:
         met_ex, suffixe = no_compartment_id(list(reac.metabolites.keys())[0].id)
@@ -93,16 +92,16 @@ def unrestrain_medium(model):
     Returns
     -------
     model : cobra.Model
-
     """
+
     for reac in model.exchanges:
         reac.bounds = (-1000, 1000)
     return model
 
 def mo_fba(model1, model2, metabolic_dict, constrained_medium_dict):
     """
+    Compute multi-objective FBA between the two given models
     
-
     Parameters
     ----------
     model1 : cobra.Model
@@ -117,8 +116,8 @@ def mo_fba(model1, model2, metabolic_dict, constrained_medium_dict):
     -------
     sol_mofba : 
         Multi-objective solution (Pareto front) of the ecosystem model
-
     """
+
     model1 = unrestrain_medium(model1)
     model2 = unrestrain_medium(model2)
     ecosys = create_model(model_array=[model1, model2], metabolic_dict=metabolic_dict, diet = constrained_medium_dict)
@@ -149,8 +148,8 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
         maximal objective value of model1 in the ecosystem model
     maxi_model2 : float
         maximal objective value of model1 in the ecosystem model
-
     """
+
     x = []
     y = []
     #Initialize analysis variables
@@ -199,8 +198,8 @@ def infer_interaction_score(xy):
         Score < 0 predicts a competitive interaction,
         Score = 0 predicts a neutral interaction
         Score > 0 predicts a positive interaction
-
     """
+
     try:
         AUC = metrics.auc(x = xy['x'], y = xy['y'])
     except: 
@@ -238,8 +237,8 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
     interaction_type : string
         Qualitative description (competition, neutrality, favors model1, favors model2,
         limited mutualism or mutualism) of the metabolic interaction between models
-
     """
+
     interaction_type_code = ["0","0","0"]
     #Evaluate parameters defining interaction category:
         #interaction_type[0] : model1 growth better in ecosystem than alone
@@ -276,8 +275,8 @@ def mocba_to_cobra(ecosys):
     Returns
     -------
     cobra_model : cobra.Model
-
     """
+
     cobra_model = cobra.Model('ecosys')
     for m in range(len(ecosys.sysmetabolites)):
         cobra_model.add_metabolites(cobra.Metabolite(ecosys.sysmetabolites[m]))
@@ -326,8 +325,8 @@ def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, mo
     sampling : pandas.dataframe
         columns : reactions_id
         rows : string(objective-value-model1_objective-value-model2) for a given sample
-
     """
+
     fba = cobra_ecosys.optimize() #just to get the reactions names for index of sampling
     sampling_dict = {}
     sampling_dict["reactions"] = fba.fluxes.index
@@ -383,8 +382,8 @@ def correlation(sampling):
     -------
     correlation_reactions : pandas dataframe
         a correlation matrix featuring all reactions of the ecosystem model
-
     """
+
     sampling = sampling.astype(float)
     correlation_reactions = sampling.corr(method ='spearman')
     correlation_reactions = correlation_reactions.fillna(0)
@@ -413,8 +412,8 @@ def reac_to_met_id(reac, model_id):
     -------
     met : string
         metabolite id
-
     """
+
     met = reac.replace("_e:"+model_id, "")
     met = met.replace("EX_", "")
     return met
@@ -444,8 +443,8 @@ def exchanged_mets(model1, model1_id, sampling, correlation_reactions, model2_id
     potential_exchange : dictionnary
         keys : metabolites id
         values : [nb of samples featuring inverse secretion/uptake for a same metabolite, direction of the exchange]
-
     """
+
     potential_exchange = {}
     for ex_reac in model1.exchanges:      
         ecosys_reac_id_model1 = ex_reac.id+":"+model1_id
@@ -488,8 +487,8 @@ def no_compartment_id(metabolite):
         metabolite_id, without its compartment information
     suffixe : string
         compartment information of the inputted metabolite
-
     """
+    
     a = metabolite
     done = False
     if metabolite[-2:] == "_e":
