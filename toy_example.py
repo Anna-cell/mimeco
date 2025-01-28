@@ -25,11 +25,11 @@ model2.solver = "cplex"
 model1_biomass_id = "Growth"
 model2_biomass_id = "Growth"
 
-potential_exchange = mimeco.exchanged_metabolites(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
-                               solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id)
-
 int_score, int_type = mimeco.interaction_score_and_type(model1, model2, Western_diet, 
                                                         undescribed_metabolites_constraint="partially_constrained")
+
+potential_exchange = mimeco.exchanged_metabolites(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
+                               solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id)
 
 with open("/home/e158401a/Documents/MIMECO/tests/resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_potential_exchange.pickle", "wb") as fp:
     pickle.dump(potential_exchange, fp)

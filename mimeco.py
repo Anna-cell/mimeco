@@ -85,7 +85,7 @@ def exchanged_metabolites(model1, model2, medium, undescribed_metabolites_constr
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
     solver : string
-        solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prio installation.
+        solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     model1_biomass_id : string
         id of the reaction used as objective in model1 (if the objective coefficient is not null for several reactions, 
                                                         then a new reaction must be built to constrain the model to a given 
