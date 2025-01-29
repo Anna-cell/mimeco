@@ -5,13 +5,27 @@ Models and medium formats
 -------------------------
 
 **MIMEco** infers the interaction between two organisms in a given medium. These two organisms must be inputted as cobrapy models.
-Cobrapy allow easy inport of models of sbml, json, yaml, matlab and pickle formats. 
+Cobrapy allows easy inport of models of sbml, json, yaml, matlab and pickle formats. 
 
 The medium must be inputted in the form of a pandas Series where the index is the medium metabolite identifier, 
 and the corresponding value is the availability of corresponding metabolite in the medium as a positive flux value (float).
 
-..
-    TODO : make an example of medium. WD pickle --> csv
+.. list-table:: Example of medium
+   :widths: 25 25
+   :header-rows: 1
+   * - index
+     - Influx (mmol.gDW-1.h-1)
+   * - ala__L
+     - 0.3
+   * - arachd
+     - 0.00386729
+   * - chsterol
+     - 0.0575975
+   * - glc__D
+     - 0.294868
+   * - ...
+     - ...
+
 
 Infering interaction score and type
 ------------------------------------
@@ -46,12 +60,13 @@ complete enough to enable the modeled organisms to grow in a "blocked" context.
 
 .. code-block:: python
 
-    interaction_score, interaction_type = mimeco.interaction_score_and_type(model1, model2, medium, undescribed_metabolites_constraint="partially_unconstrained")
+    interaction_score, interaction_type = mimeco.interaction_score_and_type(model1,
+     model2, medium, undescribed_metabolites_constraint="partially_unconstrained")
 
 Predicting cross-feeding between models
 ----------------------------------------
 
-The function exchanged_metabolites() predicts the metabolites exchanged between the two models, that are correlated with the increase of model2 objective value.
+The function ``crossfed_metabolites()`` predicts the metabolites exchanged between the two models, that are correlated with the increase of model2 objective value.
 In other words, exchanged metabolites favoring model2's objective (usually, growth). This can help identify cross-feeding.
 
 In addition to the precedently described inputs, this function necessitate the following elements :
@@ -65,10 +80,14 @@ objective value through its flux)
 
 .. code-block:: python
 
-    potential_exchange = exchanged_metabolites(model1, model2, medium, undescribed_metabolites_constraint, solver, model1_biomass_id, model2_biomass_id)
+    potential_crossfeeding = crossfed_metabolites(model1, model2, 
+    medium, undescribed_metabolites_constraint, solver, model1_biomass_id, model2_biomass_id)
 
 The output is a dictionnary formatted as :
-{metabolic id : [number of samples featuring inverse secretion/ uptake for given metabolite, direction of the exchange]}
+{metabolic id : [proportion of samples featuring inverse secretion/ uptake for given metabolite, 
+proportion of samples with metabolite exchange from model1 to model2
+proportion of samples with metabolite exchange from model2 to model1]}
 
-...
-    TODO : example of potential_exchange. Explanation of way.
+As the selected metabolites are the one favoring model2, it is interesting to run the function twic while inversing models position.
+
+See <Practical example> for an application of both function and interprtation of results.

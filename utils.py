@@ -419,9 +419,10 @@ def reac_to_met_id(reac, model_id):
     met = met.replace("EX_", "")
     return met
     
-def exchanged_mets(model1, model1_id, sampling, correlation_reactions, model2_id, model2_biomass_id):
+def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id, model2_biomass_id):
     """
     Infers metabolites that are exchanged between organisms in the ecosystem models, correlated with an increasing model2 objective value.
+    In other words, crossfed metabolite benefitting model2
 
     Parameters
     ----------
@@ -441,12 +442,14 @@ def exchanged_mets(model1, model1_id, sampling, correlation_reactions, model2_id
 
     Returns
     -------
-    potential_exchange : dictionnary
+    potential_crossfeeding : dictionnary
         keys : metabolites id
-        values : [nb of samples featuring inverse secretion/uptake for a same metabolite, direction of the exchange]
+        values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
+        proportion of samples with metabolite exchange from model1 to model2, 
+        proportion of samples with metabolite exchange from model2 to model1]
     """
 
-    potential_exchange = {}
+    potential_crossfeeding = {}
     for ex_reac in model1.exchanges:      
         ecosys_reac_id_model1 = ex_reac.id+":"+model1_id
         ecosys_reac_id_model2 = ex_reac.id+":"+model2_id
@@ -459,19 +462,23 @@ def exchanged_mets(model1, model1_id, sampling, correlation_reactions, model2_id
                 # If the uptake / secretion of given metabolite in model1, associated with its secretion / uptake in model2, is correlated with increased model2 objective value
                 if correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id] > 0.8:
                     exchange = 0
-                    way = ["0","0"]
+                    model1_to_model2 = 0
+                    model2_to_model1 = 0
                     for s in sampling.index: #parse all solutions for metabolite of interest
                         # if metabolite is secreted in one model, and uptaken in the other
                         if oppositeSigns(sampling.loc[s, ecosys_reac_id_model1], sampling.loc[s, ecosys_reac_id_model2]) :
                             exchange = exchange+1
                             if sampling.loc[s, ecosys_reac_id_model1] <0 :
-                                way[0] = "1"
+                                model1_to_model2 = model1_to_model2 + 1
                             elif sampling.loc[s, ecosys_reac_id_model2]<0:
-                                way[1] = "1"
+                                model2_to_model1 = model2_to_model1 + 1
                     if exchange >10 and met_id not in potential_exchange.keys():
-                        potential_exchange[met_id] = [exchange, way]
-    return potential_exchange
-
+                        #change results to proportions
+                        proportion_exchange = exchange/len(sampling)
+                        proportion_model1_to_model2 = model1_to_model2/len(sampling)
+                        proportion_model2_to_model1 = model2_to_model1/len(sampling)
+                        potential_crossfeeding[met_id] = [proportion_exchange, proportion_model1_to_model2, proportion_model2_to_model1]
+    return potential_crossfeeding
 
     
 def no_compartment_id(metabolite):
