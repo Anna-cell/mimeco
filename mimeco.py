@@ -68,7 +68,7 @@ def interaction_score_and_type(model1, model2, medium, undescribed_metabolites_c
 
 
 
-def exchanged_metabolites(model1, model2, medium, undescribed_metabolites_constraint, solver, model1_biomass_id, model2_biomass_id):
+def crossfed_metabolites(model1, model2, medium, undescribed_metabolites_constraint, solver, model1_biomass_id, model2_biomass_id):
     """
     A function that, given 2 models in the same namespace and a defined medium, predicts metabolic exchanges that
     are correlated with the increase of model2 objective value.
@@ -96,9 +96,11 @@ def exchanged_metabolites(model1, model2, medium, undescribed_metabolites_constr
                                                         objective value through its flux)
     Returns
     -------
-    potential_exchange : dictionnary
+    potential_crossfeeding : dictionnary
         keys : metabolites id
-        values : [nb of samples featuring inverse secretion/uptake for a same metabolite, direction of the exchange]
+        values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
+        proportion of samples with metabolite exchange from model1 to model2, 
+        proportion of samples with metabolite exchange from model2 to model1]
     """
     
     metabolic_dict = utils.create_ecosystem_metabolic_dict(model1, model2)
@@ -131,6 +133,6 @@ def exchanged_metabolites(model1, model2, medium, undescribed_metabolites_constr
     model2_id = model2.id
     sampling = utils.pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size = 1000)
     correlation_reactions = utils.correlation(sampling)
-    potential_exchange = utils.exchanged_mets(model1 = model1, model1_id = model1_id, sampling = sampling, correlation_reactions = correlation_reactions, 
+    potential_crossfeeding = utils.crossfed_mets(model1 = model1, model1_id = model1_id, sampling = sampling, correlation_reactions = correlation_reactions, 
                                         model2_id = model2_id, model2_biomass_id=model2_biomass_id)
-    return potential_exchange
+    return potential_crossfeeding
