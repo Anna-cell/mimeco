@@ -1,4 +1,3 @@
-=======
 Usage
 =======
 
@@ -43,7 +42,7 @@ Adequatly restraining important metabolites in medium creates limiting metabolit
 However, this can impact predicted metabolic pathways, including interactions between models. Ideally, the medium should be 
 complete enough to enable the modeled organisms to grow in a "blocked" context.
 
-The function "interaction_score_and_type()" take two models and a medium as variables, and an undescribed_metabolites_constraint level: 
+``interaction_score_and_type()`` function takes two models and a medium as variables, and an undescribed_metabolites_constraint level: 
 
 .. code-block:: python
 
