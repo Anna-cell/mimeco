@@ -6,6 +6,7 @@ Created on Fri Jan 17 10:37:38 2025
 @author: e158401a
 """
 
+import cobra
 import pandas as pd
 from sklearn import metrics
 import mocbapy

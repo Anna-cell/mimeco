@@ -53,6 +53,9 @@ language = 'python'
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+#To color code exemples with adapted pygments
+pygments_style = 'sphinx'
+
 
 # -- Options for HTML output -------------------------------------------------
 

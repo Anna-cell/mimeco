@@ -33,3 +33,9 @@ potential_exchange = mimeco.exchanged_metabolites(model1 = model1, model2 = mode
 
 with open("/home/e158401a/Documents/MIMECO/tests/resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_potential_exchange.pickle", "wb") as fp:
     pickle.dump(potential_exchange, fp)
+    
+Western_diet.to_csv("resources/Western_diet.csv", index = True)
+
+import pandas as pd
+
+WD = pd.read_csv("resources/Western_diet.csv", index_col = 0)
