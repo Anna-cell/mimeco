@@ -13,7 +13,7 @@ Contents
 
 .. toctree::
 
-    Home <self>
+   Home <self>
    installation
    usage
    example
