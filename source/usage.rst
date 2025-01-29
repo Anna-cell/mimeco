@@ -13,6 +13,7 @@ and the corresponding value is the availability of corresponding metabolite in t
 .. list-table:: Example of medium
    :widths: 25 25
    :header-rows: 1
+
    * - index
      - Influx (mmol.gDW-1.h-1)
    * - ala__L
