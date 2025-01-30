@@ -16,4 +16,4 @@ Contents
    Home <self>
    installation
    usage
-   .. example (make jupyter notebook)
+   .. example 
