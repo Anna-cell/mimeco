@@ -72,6 +72,7 @@ The function :py:func:`crossfed_metabolites()` predicts the metabolites exchange
 In other words, **exchanged metabolites favoring model2's objective** (usually, growth). This can help identify cross-feeding.
 
 In addition to the precedently described inputs, this function necessitate the following elements :
+
 * ``solver`` : solver that you use (advised : "cplex" or "gurobi")
 * ``model1_biomass_id`` : id (str) of the reaction used as objective in model1 (if the objective coefficient is not null for several
   reactions then a new reaction must be built to constrain the model to a given objective value through its flux)
@@ -85,9 +86,12 @@ In addition to the precedently described inputs, this function necessitate the f
     model1_biomass_id, model2_biomass_id)
 
 The output is a dictionnary formatted as :
-``{metabolic id : [proportion of samples featuring inverse secretion/ uptake for given metabolite,
-proportion of samples with metabolite exchange from model1 to model2,
-proportion of samples with metabolite exchange from model2 to model1]}``
+
+.. code-block:: python
+
+    {metabolic id : [proportion of samples featuring inverse secretion/ uptake for given metabolite,
+    proportion of samples with metabolite exchange from model1 to model2,
+    proportion of samples with metabolite exchange from model2 to model1]}
 
 As the selected metabolites are the one favoring model2, it is interesting to run the function twice while inversing models position.
 
