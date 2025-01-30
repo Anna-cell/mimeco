@@ -1,0 +1,30 @@
+MIMEco : Metabolic Interaction Modeling in Ecosystems
+=======================================================
+
+MIMEco is python package that explores communities metabolic interactions using multi-objective linear programming on GEnome-scale Metabolic models (GEMs). 
+This tool automates the inference of interaction type, interaction score and exchanged metablites beteen two models in a given condition.
+
+
+Documentation
+~~~~~~~~~~~~~
+
+For detailed documentation, please go to: [http://carveme.readthedocs.io/](https://mimeco.readthedocs.io/en/latest/)
+
+Installation
+~~~~~~~~~~~~~
+
+<Under developpment>
+This tool is destined to be available using pip.
+
+Dependancies
+~~~~~~~~~~~~~
+
+To use MIMEco, you will need to download a solver, preferably CPLEX or gurobi. Both are free for academics.
+
+<Dependancies that are in pip so juste to put in setup.py : mocbapy, pickle, warnings, pandas, sklearn, math>
+
+
+Credits and License
+~~~~~~~~~~~~~~~~~~~
+
+<TODO>
