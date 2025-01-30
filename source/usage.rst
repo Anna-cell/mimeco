@@ -89,10 +89,11 @@ The output is a dictionnary formatted as :
 
 .. code-block:: python
 
-    {metabolic id : [proportion of samples featuring inverse secretion/ uptake for given metabolite,
+    {metabolic id : 
+    [proportion of samples featuring inverse secretion/ uptake for given metabolite,
     proportion of samples with metabolite exchange from model1 to model2,
     proportion of samples with metabolite exchange from model2 to model1]}
 
 As the selected metabolites are the one favoring model2, it is interesting to run the function twice while inversing models position.
 
-See <Practical example> for an application of both function and interprtation of results.
+See <Practical example> for an application of both function and interpretation of results.
