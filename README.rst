@@ -5,13 +5,13 @@ MIMEco is python package that explores communities metabolic interactions using 
 This tool automates the inference of interaction type, interaction score and exchanged metablites beteen two models in a given condition.
 
 .. image:: resources/MIMEco_logo.png
-  :width: 300
+  :width: 500
   :alt: MIMEco logo
 
 Documentation
 ~~~~~~~~~~~~~
 
-For detailed documentation, please go to: [http://carveme.readthedocs.io/](https://mimeco.readthedocs.io/en/latest/)
+For detailed documentation, please go to `readthedocs : mimeco <https://mimeco.readthedocs.io/en/latest/>`_
 
 Installation
 ~~~~~~~~~~~~~
