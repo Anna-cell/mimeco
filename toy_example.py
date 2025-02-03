@@ -6,10 +6,10 @@ Created on Mon Jan 20 14:38:53 2025
 
 @author: e158401a
 """
-
 import cobra
 import pickle
 import mimeco
+import matplotlib.pyplot as plt
 
 resources_path = "/home/e158401a/Documents/pareto_analysis/resources/"
 with open(resources_path+"mediums_lumen_v2.pickle", "rb") as fp:   # Unpickling
@@ -28,13 +28,20 @@ model2_biomass_id = "Growth"
 int_score, int_type = mimeco.interaction_score_and_type(model1, model2, Western_diet, 
                                                         undescribed_metabolites_constraint="partially_constrained")
 
-potential_exchange = mimeco.exchanged_metabolites(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
-                               solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id)
-
-potential_exchange2to1 = mimeco.exchanged_metabolites(model1 = model2, model2 = model1, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
+potential_exchange, data = mimeco.crossfed_metabolites_plotdata(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
                                solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id)
 
 
+#potential_exchange = mimeco.crossfed_metabolites(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
+#                               solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id)
+
+
+
+
+potential_exchange2to1, data2 = mimeco.crossfed_metabolites_plotdata(model1 = model2, model2 = model1, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
+                               solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id)
+
+"""
 with open("/home/e158401a/Documents/MIMECO/tests/resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_potential_exchange.pickle", "wb") as fp:
     pickle.dump(potential_exchange, fp)
     
@@ -43,3 +50,4 @@ Western_diet.to_csv("resources/Western_diet.csv", index = True)
 import pandas as pd
 
 WD = pd.read_csv("resources/Western_diet.csv", index_col = 0)
+"""
