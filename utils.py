@@ -13,6 +13,7 @@ import mocbapy
 from mocbapy.EcosystemModel import create_model, bensolve_default_options
 import mocbapy.analysis
 import math
+import matplotlib.pyplot as plt
 
 
 def create_ecosystem_metabolic_dict(model1, model2):
@@ -401,7 +402,7 @@ def oppositeSigns(x, y): #returns boolean. 1 if x y opposite sign, 0 otherwhise
  
 def reac_to_met_id(reac, model_id):
     """
-    Returns exchanged metabolic id from an exchange reaction. 
+    Returns exchanged metabolite id from an exchange reaction. 
 
     Parameters
     ----------
@@ -421,13 +422,14 @@ def reac_to_met_id(reac, model_id):
     
 def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id, model2_biomass_id):
     """
-    Infers metabolites that are exchanged between organisms in the ecosystem models, correlated with an increasing model2 objective value.
-    In other words, crossfed metabolite benefitting model2
+    Infers metabolites that are exchanged between organisms in the ecosystem models, correlated with an increasing model1 objective value.
+    In other words, crossfed metabolite benefitting model1
 
     Parameters
     ----------
     model1 : cobra.Model
-    model1_id : cobra.Model
+    model1_id : string
+        Model denomination in the cobra.Model of model1
     sampling : pandas.dataframe
         columns : reactions_id
         rows : string(objective-value-model1_objective-value-model2) for a given sample
@@ -472,13 +474,109 @@ def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id,
                                 model1_to_model2 = model1_to_model2 + 1
                             elif sampling.loc[s, ecosys_reac_id_model2]<0:
                                 model2_to_model1 = model2_to_model1 + 1
-                    if exchange >10 and met_id not in potential_exchange.keys():
+                    if exchange >10 and met_id not in potential_crossfeeding.keys():
                         #change results to proportions
                         proportion_exchange = exchange/len(sampling)
                         proportion_model1_to_model2 = model1_to_model2/len(sampling)
                         proportion_model2_to_model1 = model2_to_model1/len(sampling)
                         potential_crossfeeding[met_id] = [proportion_exchange, proportion_model1_to_model2, proportion_model2_to_model1]
-    return potential_crossfeeding
+    else:
+        return potential_crossfeeding
+
+def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id):
+    """
+    Extracts sampling data from predicted exchanged metabolites, and models objective values for each sample.
+
+    Parameters
+    ----------
+    sampling : pandas.dataframe
+        columns : reactions_id
+        rows : string(objective-value-model1_objective-value-model2) for a given sample
+    potential_crossfeeding : dictionnary
+        keys : metabolites id
+        values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
+        proportion of samples with metabolite exchange from model1 to model2, 
+        proportion of samples with metabolite exchange from model2 to model1]
+    model1_id : string
+        Model denomination in the cobra.Model of model1
+    model2_id : string
+        Model denomination in the cobra.Model of model1
+
+    Returns
+    -------
+    relevant_data : pandas dataframe
+        Dataframe based on the sampling, resulting in each rw bing a sample.
+        The first two columns records the objective value, in the given sample, of both models.
+        Other columns are, by pairs, the flux values of the exchange reactions of a crossfed metabolite for both models.
+    """
+
+    obj_value_model1 = []
+    obj_value_model2 = []
+    for i in sampling.index:      
+        obj_value_model1.append(float(i.split("_", 1)[0]))
+        obj_value_model2.append(float(i.split("_", 1)[1]))
+    relevant_data = pd.DataFrame({"obj_value_model1" : obj_value_model1, 
+                                  "obj_value_model2" : obj_value_model2})
+    for metabolite in potential_crossfeeding.keys():
+        ecosys_reac_id_model1 = "EX_"+metabolite+"_e"+":"+model1_id
+        ecosys_reac_id_model2 = "EX_"+metabolite+"_e"+":"+model2_id
+        relevant_data[ecosys_reac_id_model1] = sampling[ecosys_reac_id_model1].values
+        relevant_data[ecosys_reac_id_model2] = sampling[ecosys_reac_id_model2].values
+    return relevant_data
+
+
+def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id):
+    """
+    Visualize crossfed metablites flux evlution on along the pareto front. This visualisation is rudimentary.
+    To create better and personnalized figures, use "mimeco.crossfed_metabolites_plotdata" which returns data relevant to the
+    predicted crossfed metabolites and build your preferred visualisation. 
+
+    Parameters
+    ----------
+    sampling : pandas.dataframe
+        columns : reactions_id
+        rows : string(objective-value-model1_objective-value-model2) for a given sample
+    potential_crossfeeding : dictionnary
+        keys : metabolites id
+        values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
+        proportion of samples with metabolite exchange from model1 to model2, 
+        proportion of samples with metabolite exchange from model2 to model1]
+    model1_id : string
+        Model denomination in the cobra.Model of model1
+    model2_id : string
+        Model denomination in the cobra.Model of model1
+    """
+
+    max_model1 = 0
+    max_model2 = 0
+    for i in sampling.index:      
+        obj_value_model1 = float(i.split("_", 1)[0])
+        obj_value_model2 = float(i.split("_", 1)[1])  
+        if obj_value_model1 > max_model1:
+            max_model1 = obj_value_model1
+            max_ind_model1 = i
+        if obj_value_model2 > max_model2:
+            max_model2 = obj_value_model2
+            max_ind_model2 = i
+    for metabolite in potential_crossfeeding.keys():
+        ecosys_reac_id_model1 = "EX_"+metabolite+"_e"+":"+model1_id
+        ecosys_reac_id_model2 = "EX_"+metabolite+"_e"+":"+model2_id
+        a = sampling[ecosys_reac_id_model1]
+        b = sampling[ecosys_reac_id_model2]
+        plt.plot(a, "#e06666", label = model1_id)
+        plt.plot(b, "#3d85c6", label = model2_id)
+        plt.axvline(x = max_ind_model1, color = "#e06666", linestyle=':')
+        plt.axvline(x = max_ind_model2, color = "#3d85c6", linestyle=':')
+        plt.tick_params(
+        axis='x',          # changes apply to the x-axis
+        which='both',      # both major and minor ticks are affected
+        bottom=False,      # ticks along the bottom edge are off
+        top=False,         # ticks along the top edge are off
+        labelbottom=False) # labels along the bottom edge are off
+        plt.title("evolution of "+metabolite+" exchanges on the pareto front")
+        plt.legend()
+        plt.show()
+        plt.clf()
 
     
 def no_compartment_id(metabolite):
