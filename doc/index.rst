@@ -16,4 +16,3 @@ Contents
    Home <self>
    installation
    usage
-   .. example 

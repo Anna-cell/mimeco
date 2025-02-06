@@ -18,18 +18,22 @@ with open(resources_path+"mediums_lumen_v2.pickle", "rb") as fp:   # Unpickling
 Western_diet = mediums_lumen["Western_diet"]
 model1 = cobra.io.read_sbml_model("/home/e158401a/Documents/models/embl_gems/models/l/lactobacillus/Lactobacillus_plantarum_WCFS1.xml")
 model2 = cobra.io.read_sbml_model("/home/e158401a/Documents/models/embl_gems/models/a/akkermansia/Akkermansia_muciniphila_ATCC_BAA_835.xml")
+model3 = cobra.io.read_sbml_model("/home/e158401a/Documents/models/embl_gems/models/l/lactobacillus/Lactobacillus_rhamnosus_GG_GG_ATCC_53103.xml")
 model1.solver = "cplex"
 model2.solver = "cplex"
+model3.solver = "cplex"
+
+int_score, int_type = mimeco.interaction_score_and_type_enterocyte(model3, Western_diet, undescribed_metabolites_constraint="as_is", plot=True)
 
 
 model1_biomass_id = "Growth"
 model2_biomass_id = "Growth"
 
 int_score, int_type = mimeco.interaction_score_and_type(model1, model2, Western_diet, 
-                                                        undescribed_metabolites_constraint="partially_constrained")
+                                                        undescribed_metabolites_constraint="as_is", plot=True)
 
 potential_exchange, data = mimeco.crossfed_metabolites_plotdata(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
-                               solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id)
+                               solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id, plot = True)
 
 
 #potential_exchange = mimeco.crossfed_metabolites(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
@@ -51,3 +55,23 @@ import pandas as pd
 
 WD = pd.read_csv("resources/Western_diet.csv", index_col = 0)
 """
+
+host = cobra.io.read_sbml_model("resources/enterocyte.xml")
+
+host.compartments
+host.exchanges
+
+import pandas as pd
+blood_exchanges = pd.DataFrame(blood_exchanges, columns=['blood_exchanges'])
+blood_exchanges.to_csv("/home/e158401a/Documents/mimeco/resources/blood_reactions_id_enterocyte.csv", index=False)
+
+import csv
+with open("/home/e158401a/Documents/mimeco/resources/blood_reactions_id_enterocyte.csv", 'w') as myfile:
+     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+     wr.writerow(blood_exchanges)
+     
+blood_exchanges = pd.read_csv("/home/e158401a/Documents/mimeco/resources/blood_reactions_id_enterocyte.csv")
+for reac_id in blood_exchanges["blood_exchanges"]:
+    reac = host.reactions.get_by_id(reac_id)
+    print(reac_id)
+    print(reac.bounds)

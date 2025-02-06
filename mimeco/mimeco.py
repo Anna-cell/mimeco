@@ -7,10 +7,12 @@ Created on Mon Jan 20 09:46:31 2025
 """
 
 import utils
+import enterocyte_specific_utils
 import pickle
 import warnings
+import cobra
 
-def interaction_score_and_type(model1, model2, medium, undescribed_metabolites_constraint):
+def interaction_score_and_type(model1, model2, medium, undescribed_metabolites_constraint, plot = False):
     """
     A function that, given 2 models in the same namespace and a defined medium, analyses the interaction between the two models,
     infering qualitative (interaction_type) and quantitative (interaction_score) information on their metabolic interaction. 
@@ -22,10 +24,11 @@ def interaction_score_and_type(model1, model2, medium, undescribed_metabolites_c
     medium : pandas series
         Index : metabolites names
         values  : Availability of corresponding metabolite in the medium as a positive flux value. 
-    undescribed_metabolites_constraint : string ("blocked" or "partially_constrained"). 
+    undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        "as_is" : Their availability is the same as in the original inputted model. 
 
     Returns
     -------
@@ -64,6 +67,10 @@ def interaction_score_and_type(model1, model2, medium, undescribed_metabolites_c
     xy, maxi_model1, maxi_model2 = utils.pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2) #parse and normalize pareto front
     interaction_score = utils.infer_interaction_score(xy) #measure AUC of Pareto front, translates it in quantitative interaction prediction
     interaction_type = utils.infer_interaction_type(interaction_score, maxi_model1, maxi_model2,solo_growth_model1, solo_growth_model2) #infers interaction type from pareto front's shape.
+    if plot:
+        model1_id = model1.id
+        model2_id = model2.id
+        utils.pareto_plot(xy, model1_id, model2_id)
     return interaction_score, interaction_type
 
 
@@ -81,10 +88,11 @@ def crossfed_metabolites(model1, model2, medium, undescribed_metabolites_constra
     medium : pandas series
         Index : metabolites names
         values  : Availability of corresponding metabolite in the medium as a positive flux value. 
-    undescribed_metabolites_constraint : string ("blocked" or "partially_constrained"). 
+    undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        "as_is" : Their availability is the same as in the original inputted model. 
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     model1_biomass_id : string
@@ -95,6 +103,9 @@ def crossfed_metabolites(model1, model2, medium, undescribed_metabolites_constra
         id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, 
                                                         then a new reaction must be built to constrain the model to a given 
                                                         objective value through its flux)
+    plot : Boolean, optional
+        Rudimentary integrated plot function to visualize Pareto front.
+
     Returns
     -------
     potential_crossfeeding : dictionnary
@@ -157,10 +168,11 @@ def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolite
     medium : pandas series
         Index : metabolites names
         values  : Availability of corresponding metabolite in the medium as a positive flux value. 
-    undescribed_metabolites_constraint : string ("blocked" or "partially_constrained"). 
+    undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        "as_is" : Their availability is the same as in the original inputted model. 
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     model1_biomass_id : string
@@ -219,3 +231,70 @@ def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolite
                                                 model2_biomass_id=model2_biomass_id)
     relevant_data = utils.extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id)
     return potential_crossfeeding, relevant_data
+
+
+def interaction_score_and_type_enterocyte(model, medium, undescribed_metabolites_constraint, plot = False):
+    """
+    A function infering the interaction between a given model and a small intestinal epithelial cell (sIEC) adapted from https://doi.org/10.1093/hmg/ddt119.
+    Returns qualitative (interaction_type) and quantitative (interaction_score) information on their metabolic interaction.
+    
+    Parameters
+    ----------
+    model2 : cobra.Model 
+    medium : pandas series
+        Index : metabolites names
+        values  : Availability of corresponding metabolite in the medium as a positive flux value. 
+    undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
+        How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
+        "blocked" : They are not available in the medium at all (can result in model unable to grow)
+        "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        "as_is" : Their availability is the same as in the original inputted model. 
+    plot : Boolean, optional
+        Rudimentary integrated plot function to visualize Pareto front.
+
+    Returns
+    -------
+    interaction_score : float
+        Predicts the nature of the interaction between host and model 2. 
+        Score < 0 predicts a competitive interaction,
+        Score = 0 predicts a neutral interaction
+        Score > 0 predicts a positive interaction
+    interaction_type : string
+        Qualitative description of the interaction.
+    """
+
+    host = cobra.io.read_sbml_model("resources/enterocyte.xml")
+    host.solver = "cplex"
+    metabolic_dict = utils.create_ecosystem_metabolic_dict(host, model)
+    #Restrain enterocyte exchanges with the blood compartment.
+    host = enterocyte_specific_utils.restrain_blood_exchange_enterocyte(host)
+    #Infers maximal objective value of both models seperately, in the given medium.
+    with host:
+        host, constrained_medium_dict1 = utils.restrain_medium(host, medium, undescribed_metabolites_constraint)
+        solo_growth_host = host.optimize().objective_value
+    with model:
+        model, constrained_medium_dict2 = utils.restrain_medium(model, medium, undescribed_metabolites_constraint)
+        solo_growth_model = model.optimize().objective_value
+    if solo_growth_host == solo_growth_model == 0:
+        raise RuntimeError("Both models had a null objective value when modeled alone in the given medium."+
+                           " To enable this analysis, you need to adjust the medium or models. You can also"+
+                           " try to lighten the medium constraint by using the \"partially_constrained\""+
+                           " option for the undescribed_metabolites_constraint argument.") 
+    elif solo_growth_host == 0 or solo_growth_model == 0:
+        warnings.warn("One model had a null objective value when modeled alone in the given medium."+
+                      " If this is not an expected result, you might want to use the \"partially_constrained\""+
+                      " option for the undescribed_metabolites_constraint argument, or redefine your medium or model.")
+    medium_dict = {**constrained_medium_dict1, **constrained_medium_dict2} #Translate medium constraint for mocba
+    # mocba will create new exchange reaction exterior to both models. the original exchange reactions, if restrained, will prevent 
+    #exchanges between organisms. Here we unconstrain them.
+    medium_dict["o2_e"] = (0, host.reactions.get_by_id("EX_o2_e").upper_bound) #O2 can only appear by enterocyt secretion.
+    host = utils.unrestrain_medium(host)
+    model = utils.unrestrain_medium(model)
+    sol_mofba = utils.mo_fba(host, model, metabolic_dict, medium_dict)[0] #get multi-objective solution (pareto front)
+    xy, maxi_host, maxi_model = utils.pareto_parsing(sol_mofba, solo_growth_host, solo_growth_model) #parse and normalize pareto front
+    interaction_score = utils.infer_interaction_score(xy) #measure AUC of Pareto front, translates it in quantitative interaction prediction
+    interaction_type = utils.infer_interaction_type(interaction_score, maxi_host, maxi_model,solo_growth_host, solo_growth_model) #infers interaction type from pareto front's shape.
+    if plot: #Visualize Pareto front
+        model2_id = model.id
+        utils.pareto_plot(xy, "enterocyte", model2_id)
+    return interaction_score, interaction_type

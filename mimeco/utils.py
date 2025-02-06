@@ -67,6 +67,7 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint):
 
     constrained_medium_dict = {}
     for reac in model.exchanges:
+        old_bounds = reac.bounds
         met_ex, suffixe = no_compartment_id(list(reac.metabolites.keys())[0].id)
         if met_ex in list(medium.index):
             constrained_medium_dict[met_ex+suffixe] = (-medium.loc[met_ex], reac._upper_bound)
@@ -74,9 +75,13 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint):
         elif undescribed_metabolites_constraint == "blocked":
             constrained_medium_dict[met_ex+suffixe] = (0, reac._upper_bound)
             reac.lower_bound = 0
-        elif undescribed_metabolites_constraint == "partially_constrained":
+        elif undescribed_metabolites_constraint == "partially_constrained" and old_bounds[0] < -1:
             constrained_medium_dict[met_ex+suffixe] = (-1, reac._upper_bound)
             reac.lower_bound = -1
+        elif undescribed_metabolites_constraint == "as_is":
+            print("nothing")
+            #constrained_medium_dict[met_ex+suffixe] = (reac.lower_bound, reac._upper_bound)
+
     if constrained_medium_dict == {}:
         warnings.warn("The inputted medium constraint does not match the model's namespace. The medium could not be applied to the ecosystem model")
     return model, constrained_medium_dict
@@ -146,10 +151,10 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
     -------
     xy : pandas dataframe
     Normalized pareto points
-    maxi_model1 : float
-        maximal objective value of model1 in the ecosystem model
-    maxi_model2 : float
-        maximal objective value of model1 in the ecosystem model
+    maxi_model1 : numpy.ndarray
+        Pareto solution in which model1 objective value is the highest. 
+    maxi_model2 : numpy.ndarray
+        Pareto solution in which model2 objective value is the highest. 
     """
 
     x = []
@@ -174,7 +179,7 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
     xy.sort_values('x', inplace=True)
                
     #Add initial points, corresponding to solo models optimal objective values
-    #Values added are slightly dfferent than 1 and 0 to make sure the serie of coordinate continuous
+    #Values added are slightly dfferent than 1 and 0 to make sure the serie of coordinate is continuous
     if not ((xy['x'] == 1) & (xy['y'] == 0)).any():
         xy = xy.append({'x' : 1.00001, 'y' : -0.00001}, ignore_index=True) 
     if not ((xy['x'] == 0) & (xy['y'] == 1)).any():
@@ -205,7 +210,7 @@ def infer_interaction_score(xy):
     try:
         AUC = metrics.auc(x = xy['x'], y = xy['y'])
     except: 
-    #If the growth alone is lower than with paired model, x is not monotonous since it goes up and then down. AUC determination takes one more step.
+    #If the growth alone is lower than with paired model, x is not monotonous since it increases and then decreases. AUC determination takes one more step.
     #We calculate the AUC where x is monotonous, the AUC of the inverted part of the Pareto, and substract the last part from the first.
         AUC1 = metrics.auc(x = xy['x'][0:-1], y = xy['y'][0:-1])
         AUC2 = metrics.auc(x = xy['x'][-2:], y = xy['y'][-2:])
@@ -225,10 +230,10 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
         Score < 0 predicts a competitive interaction,
         Score = 0 predicts a neutral interaction
         Score > 0 predicts a positive interaction
-    maxi_model1 : float
-        maximal objective value of model1 in the ecosystem model
-    maxi_model2 : float
-        maximal objective value of model2 in the ecosystem model
+    maxi_model1 : numpy.ndarray
+        Pareto solution in which model1 objective value is the highest. 
+    maxi_model2 : numpy.ndarray
+        Pareto solution in which model1 objective value is the highest. 
     solo_growth_model1 : float
         Objective value of model1 when optimized alone in the described medium
     solo_growth_model2 : float
@@ -265,6 +270,16 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
                                     "110":"limited mutualism", "111":"mutualism"}
     interaction_type = interaction_type_translation[interaction_type_code]
     return interaction_type
+
+def pareto_plot(xy, model1_id, model2_id):
+    plt.title("Pareto front of "+model1_id+" - "+model2_id+" metabolic interaction")
+    plt.xlabel(model1_id+"'s objective value")
+    plt.ylabel(model2_id+"'s objective value")
+    plt.plot(xy['x'], xy['y'], '#ff0000', linestyle="-")
+    plt.fill_between(xy['x'], xy['y'], color = "#f08c8c30")
+    plt.axhline(y = 1, color = '#1155cc', linestyle = '--', linewidth = 1)
+    plt.axvline(x = 1, color = '#1155cc', linestyle = '--', linewidth = 1)
+    plt.show()
 
 def mocba_to_cobra(ecosys):
     """
