@@ -8,7 +8,6 @@ Created on Mon Feb 01 16:11:15 2025
 import pandas as pd
 
 blood_reactions = pd.read_csv("resources/blood_reactions_id_enterocyte.csv")
-AAD_medium_blood = pd.read_csv("resources/AAD_notebook.tsv", sep="\t", index_col = 0)
 
 # AAD Must be lb ub because blood is different... will need different format. (two columns)
 #!! blood exchange reaction in the other way as lumen, and general convention. 
@@ -37,7 +36,10 @@ def restrain_blood_exchange_enterocyte(model, medium_blood = None):
     model : cobra.Model
         sIEC with blood exchanges constrained
     """
-    
+    if namespace == BiGG:
+        AAD_medium_blood = pd.read_csv("resources/AAD_BiGG.tsv", sep="\t", index_col = 0)
+    elif namespace == AGORA:
+        AAD_medium_blood = pd.read_csv("resources/AAD_AGORA.tsv", sep="\t", index_col = 0)
     #Constrain exchanges with blood compartment
     if medium_blood == None:
         medium_blood = AAD_medium_blood
