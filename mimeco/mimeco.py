@@ -148,7 +148,7 @@ def crossfed_metabolites(model1, model2, medium, undescribed_metabolites_constra
     potential_crossfeeding = utils.crossfed_mets(model1 = model1, model1_id = model1_id, sampling = sampling, 
                                                 correlation_reactions = correlation_reactions, model2_id = model2_id, 
                                                 model2_biomass_id=model2_biomass_id)
-    if plot:
+    if plot: #Visualize pareto front
         utils.plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id)
 
     return potential_crossfeeding
@@ -233,7 +233,7 @@ def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolite
     return potential_crossfeeding, relevant_data
 
 
-def interaction_score_and_type_enterocyte(model, medium, undescribed_metabolites_constraint, plot = False):
+def interaction_score_and_type_enterocyte(model, medium, undescribed_metabolites_constraint, namespace = "BIGG", plot = False):
     """
     A function infering the interaction between a given model and a small intestinal epithelial cell (sIEC) adapted from https://doi.org/10.1093/hmg/ddt119.
     Returns qualitative (interaction_type) and quantitative (interaction_score) information on their metabolic interaction.
@@ -248,7 +248,10 @@ def interaction_score_and_type_enterocyte(model, medium, undescribed_metabolites
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
-        "as_is" : Their availability is the same as in the original inputted model. 
+        "as_is" : Their availability is the same as in the original inputted model.
+    namespace : string
+        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
+        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
     plot : Boolean, optional
         Rudimentary integrated plot function to visualize Pareto front.
 
@@ -262,8 +265,10 @@ def interaction_score_and_type_enterocyte(model, medium, undescribed_metabolites
     interaction_type : string
         Qualitative description of the interaction.
     """
-
-    host = cobra.io.read_sbml_model("resources/enterocyte.xml")
+    if namespace == "BIGG":
+        host = cobra.io.read_sbml_model("resources/enterocyte.xml")
+    elif namespace == "AGORA":
+        host = cobra.io.read_sbml_model("resources/enterocyte_VMH.xml")
     host.solver = "cplex"
     metabolic_dict = utils.create_ecosystem_metabolic_dict(host, model)
     #Restrain enterocyte exchanges with the blood compartment.
