@@ -70,8 +70,8 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint):
         old_bounds = reac.bounds
         met_ex, suffixe = no_compartment_id(list(reac.metabolites.keys())[0].id)
         if met_ex in list(medium.index):
-            constrained_medium_dict[met_ex+suffixe] = (-medium.loc[met_ex], reac._upper_bound)
-            reac.lower_bound = -medium.loc[met_ex]
+            constrained_medium_dict[met_ex+suffixe] = (-medium.loc[met_ex][0], reac._upper_bound)
+            reac.lower_bound = -medium.loc[met_ex][0]
         elif undescribed_metabolites_constraint == "blocked":
             constrained_medium_dict[met_ex+suffixe] = (0, reac._upper_bound)
             reac.lower_bound = 0
@@ -79,9 +79,7 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint):
             constrained_medium_dict[met_ex+suffixe] = (-1, reac._upper_bound)
             reac.lower_bound = -1
         elif undescribed_metabolites_constraint == "as_is":
-            print("nothing")
-            #constrained_medium_dict[met_ex+suffixe] = (reac.lower_bound, reac._upper_bound)
-
+            constrained_medium_dict[met_ex+suffixe] = (reac.lower_bound, reac._upper_bound)
     if constrained_medium_dict == {}:
         warnings.warn("The inputted medium constraint does not match the model's namespace. The medium could not be applied to the ecosystem model")
     return model, constrained_medium_dict
@@ -251,23 +249,25 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
         #interaction_type[0] : model1 growth better in ecosystem than alone
         #interaction_type[1] : model2 growth better in ecosystem than alone
         #interaction_type[2] : Both models share an optimal solution
-    if maxi_model1[0] > solo_growth_model1+(0.01*solo_growth_model1): #solution is an approximation, so slightly varies between instances, 
+    if maxi_model1[0] > solo_growth_model1+(0.001*solo_growth_model1): #solution is an approximation, so slightly varies between instances, 
                                                                       #we make sure the difference in growth is not an artefact
         interaction_type_code[0] = "1"        
-    if maxi_model2[1] > solo_growth_model2+(0.01*solo_growth_model2):
+    if maxi_model2[1] > solo_growth_model2+(0.001*solo_growth_model2):
         interaction_type_code[1] = "1"
     if tuple(maxi_model1) == tuple(maxi_model2) :
         interaction_type_code[2] = "1"
     interaction_type_code=''.join(interaction_type_code)
     if interaction_score < -0.0001 and interaction_type_code == "000": #Make sure score is negative despite approximation : competition
         interaction_type_code = "-000"
-    elif interaction_score > -0.0001 and interaction_score < 0.0001: #Make sure score is equivalent to 0 : neutrality
+    elif interaction_score >= -0.0001 and interaction_score <= 0.0001: #Make sure score is equivalent to 0 : neutrality
         interaction_type_code = "=000" 
-    if interaction_type_code not in ["-000", "=000", "100","010","110", "111"]:
-        raise RuntimeError("There was a problem while infering interaction_type. It is probably in the definition of the model or medium.")
+    if interaction_type_code not in ["-000", "=000", "100","010","110", "111", "011", "101"]:
+        print(interaction_type_code)
+        #raise RuntimeError("There was a problem while infering interaction_type. It is probably in the definition of the model or medium.")
     interaction_type_translation = {"-000":"competition", "=000": "neutrality", 
                                     "100":"favors model1", "010":"favors model2",
-                                    "110":"limited mutualism", "111":"mutualism"}
+                                    "110":"limited mutualism", "111":"mutualism",
+                                    "011" : "Favors model2", "101" : "favors model1"}
     interaction_type = interaction_type_translation[interaction_type_code]
     return interaction_type
 
@@ -309,7 +309,7 @@ def mocba_to_cobra(ecosys):
         reaction.add_metabolites(dict_metabolites)
     return cobra_model
 
-def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size = 1000):
+def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size):
     """
     Samples the Pareto front, infering a solution for <sample_size> points on the pareto front.
 
@@ -335,7 +335,7 @@ def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, mo
                                                         then a new reaction must be built to constrain the model to a given 
                                                         objective value through its flux)
     sample_size : int, optional
-        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. The default is 1000.
+        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass.
 
     Returns
     -------
@@ -431,7 +431,8 @@ def reac_to_met_id(reac, model_id):
         metabolite id
     """
 
-    met = reac.replace("_e:"+model_id, "")
+    met = reac.replace("_e:"+model_id, "") #BiGG namespace
+    met = reac.replace("(e):"+model_id, "") #Agora namespace
     met = met.replace("EX_", "")
     return met
     

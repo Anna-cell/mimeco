@@ -6,8 +6,12 @@ Created on Mon Jan 20 09:46:31 2025
 @author: e158401a
 """
 
-import utils
-import enterocyte_specific_utils
+#TODO : make absolute path for package (init ?)
+#import os
+#os.chdir(/home/e158401a/Documents/mimeco)
+
+import mimeco.utils as utils
+import mimeco.enterocyte_specific_utils as enterocyte_specific_utils
 import pickle
 import warnings
 import cobra
@@ -154,7 +158,7 @@ def crossfed_metabolites(model1, model2, medium, undescribed_metabolites_constra
     return potential_crossfeeding
 
 def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolites_constraint, solver, model1_biomass_id, 
-                        model2_biomass_id):
+                        model2_biomass_id, sample_size = 1000):
     """
     Compute the same analysis as "crossfed_metabolites". Additionnaly returns a dataframe containing data judged relevant 
     from the analysis. Specifically, the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
@@ -183,6 +187,9 @@ def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolite
         id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, 
                                                         then a new reaction must be built to constrain the model to a given 
                                                         objective value through its flux)
+    sample_size : int, optional
+        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. The default is 1000.
+
     Returns
     -------
     potential_crossfeeding : dictionnary
@@ -224,7 +231,7 @@ def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolite
     cobra_ecosys.solver = solver 
     model1_id = model1.id
     model2_id = model2.id
-    sampling = utils.pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size = 1000)
+    sampling = utils.pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size=sample_size)
     correlation_reactions = utils.correlation(sampling)
     potential_crossfeeding = utils.crossfed_mets(model1 = model1, model1_id = model1_id, sampling = sampling, 
                                                 correlation_reactions = correlation_reactions, model2_id = model2_id, 
@@ -249,11 +256,13 @@ def interaction_score_and_type_enterocyte(model, medium, undescribed_metabolites
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         "as_is" : Their availability is the same as in the original inputted model.
-    namespace : string
+    namespace : string, optionnal
         "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
         "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
+        default is "BIGG"
     plot : Boolean, optional
         Rudimentary integrated plot function to visualize Pareto front.
+        default is False
 
     Returns
     -------
@@ -266,20 +275,23 @@ def interaction_score_and_type_enterocyte(model, medium, undescribed_metabolites
         Qualitative description of the interaction.
     """
     if namespace == "BIGG":
-        host = cobra.io.read_sbml_model("resources/enterocyte.xml")
+        host = cobra.io.read_sbml_model("mimeco/resources/enterocyte_BiGG.xml")
     elif namespace == "AGORA":
-        host = cobra.io.read_sbml_model("resources/enterocyte_VMH.xml")
+        host = cobra.io.read_sbml_model("mimeco/resources/enterocyte_VMH_v3.xml")
     host.solver = "cplex"
+    host.objective = host.reactions.get_by_id('biomass_reactionIEC01b')
     metabolic_dict = utils.create_ecosystem_metabolic_dict(host, model)
     #Restrain enterocyte exchanges with the blood compartment.
-    host = enterocyte_specific_utils.restrain_blood_exchange_enterocyte(host)
+    host = enterocyte_specific_utils.restrain_blood_exchange_enterocyte(host, namespace = namespace)
     #Infers maximal objective value of both models seperately, in the given medium.
     with host:
         host, constrained_medium_dict1 = utils.restrain_medium(host, medium, undescribed_metabolites_constraint)
         solo_growth_host = host.optimize().objective_value
+        print(solo_growth_host)
     with model:
         model, constrained_medium_dict2 = utils.restrain_medium(model, medium, undescribed_metabolites_constraint)
         solo_growth_model = model.optimize().objective_value
+        print(solo_growth_model)
     if solo_growth_host == solo_growth_model == 0:
         raise RuntimeError("Both models had a null objective value when modeled alone in the given medium."+
                            " To enable this analysis, you need to adjust the medium or models. You can also"+
@@ -290,9 +302,12 @@ def interaction_score_and_type_enterocyte(model, medium, undescribed_metabolites
                       " If this is not an expected result, you might want to use the \"partially_constrained\""+
                       " option for the undescribed_metabolites_constraint argument, or redefine your medium or model.")
     medium_dict = {**constrained_medium_dict1, **constrained_medium_dict2} #Translate medium constraint for mocba
+    if namespace == "BIGG":
+        medium_dict["o2_e"] = (0, host.reactions.get_by_id("EX_o2_e").upper_bound) #O2 can only appear by enterocyte secretion.
+    elif namespace == "AGORA":
+        medium_dict["o2(e)"] = (0, host.reactions.get_by_id("EX_o2(e)").upper_bound) #O2 can only appear by enterocyte secretion.
     # mocba will create new exchange reaction exterior to both models. the original exchange reactions, if restrained, will prevent 
     #exchanges between organisms. Here we unconstrain them.
-    medium_dict["o2_e"] = (0, host.reactions.get_by_id("EX_o2_e").upper_bound) #O2 can only appear by enterocyt secretion.
     host = utils.unrestrain_medium(host)
     model = utils.unrestrain_medium(model)
     sol_mofba = utils.mo_fba(host, model, metabolic_dict, medium_dict)[0] #get multi-objective solution (pareto front)
