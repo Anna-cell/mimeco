@@ -430,13 +430,12 @@ def reac_to_met_id(reac, model_id):
     met : string
         metabolite id
     """
-
     met = reac.replace("_e:"+model_id, "") #BiGG namespace
-    met = reac.replace("(e):"+model_id, "") #Agora namespace
+    met = met.replace("(e):"+model_id, "") #Agora namespace
     met = met.replace("EX_", "")
     return met
     
-def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id, model2_biomass_id):
+def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_biomass_id):
     """
     Infers metabolites that are exchanged between organisms in the ecosystem models, correlated with an increasing model1 objective value.
     In other words, crossfed metabolite benefitting model1
@@ -444,8 +443,6 @@ def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id,
     Parameters
     ----------
     model1 : cobra.Model
-    model1_id : string
-        Model denomination in the cobra.Model of model1
     sampling : pandas.dataframe
         columns : reactions_id
         rows : string(objective-value-model1_objective-value-model2) for a given sample
@@ -468,10 +465,10 @@ def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id,
     """
 
     potential_crossfeeding = {}
-    for ex_reac in model1.exchanges:      
-        ecosys_reac_id_model1 = ex_reac.id+":"+model1_id
+    for ex_reac in model1.exchanges:     
+        ecosys_reac_id_model1 = ex_reac.id+":"+model1.id
         ecosys_reac_id_model2 = ex_reac.id+":"+model2_id
-        met_id = reac_to_met_id(ecosys_reac_id_model1, model1_id)      
+        met_id = reac_to_met_id(reac = ecosys_reac_id_model1, model_id = model1.id)
         #if a metabolite has an exchange reaction in both models
         if ecosys_reac_id_model1 in correlation_reactions.index and ecosys_reac_id_model2 in correlation_reactions.index:
             #if both exchange reactions have at least one non-null flux value among all samples.
@@ -499,7 +496,7 @@ def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id,
     else:
         return potential_crossfeeding
 
-def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id):
+def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id, namespace):
     """
     Extracts sampling data from predicted exchanged metabolites, and models objective values for each sample.
 
@@ -517,6 +514,10 @@ def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id
         Model denomination in the cobra.Model of model1
     model2_id : string
         Model denomination in the cobra.Model of model1
+    namespace : string, optionnal
+        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
+        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
+        default is "BIGG"
 
     Returns
     -------
@@ -528,20 +529,24 @@ def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id
 
     obj_value_model1 = []
     obj_value_model2 = []
+    if namespace == "BIGG":
+        suffixe = "_e"
+    elif namespace == "AGORA":
+        suffixe = "(e)"
     for i in sampling.index:      
         obj_value_model1.append(float(i.split("_", 1)[0]))
         obj_value_model2.append(float(i.split("_", 1)[1]))
     relevant_data = pd.DataFrame({"obj_value_model1" : obj_value_model1, 
                                   "obj_value_model2" : obj_value_model2})
     for metabolite in potential_crossfeeding.keys():
-        ecosys_reac_id_model1 = "EX_"+metabolite+"_e"+":"+model1_id
-        ecosys_reac_id_model2 = "EX_"+metabolite+"_e"+":"+model2_id
+        ecosys_reac_id_model1 = "EX_"+metabolite+suffixe+":"+model1_id
+        ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
         relevant_data[ecosys_reac_id_model1] = sampling[ecosys_reac_id_model1].values
         relevant_data[ecosys_reac_id_model2] = sampling[ecosys_reac_id_model2].values
     return relevant_data
 
 
-def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id):
+def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id, namespace = "BIGG"):
     """
     Visualize crossfed metablites flux evlution on along the pareto front. This visualisation is rudimentary.
     To create better and personnalized figures, use "mimeco.crossfed_metabolites_plotdata" which returns data relevant to the
@@ -561,10 +566,18 @@ def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id):
         Model denomination in the cobra.Model of model1
     model2_id : string
         Model denomination in the cobra.Model of model1
+    namespace : string, optionnal
+        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
+        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
+        default is "BIGG"
     """
 
     max_model1 = 0
     max_model2 = 0
+    if namespace == "BIGG":
+        suffixe = "_e"
+    elif namespace == "AGORA":
+        suffixe = "(e)"
     for i in sampling.index:      
         obj_value_model1 = float(i.split("_", 1)[0])
         obj_value_model2 = float(i.split("_", 1)[1])  
@@ -575,8 +588,8 @@ def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id):
             max_model2 = obj_value_model2
             max_ind_model2 = i
     for metabolite in potential_crossfeeding.keys():
-        ecosys_reac_id_model1 = "EX_"+metabolite+"_e"+":"+model1_id
-        ecosys_reac_id_model2 = "EX_"+metabolite+"_e"+":"+model2_id
+        ecosys_reac_id_model1 = "EX_"+metabolite+suffixe+":"+model1_id
+        ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
         a = sampling[ecosys_reac_id_model1]
         b = sampling[ecosys_reac_id_model2]
         plt.plot(a, "#e06666", label = model1_id)
