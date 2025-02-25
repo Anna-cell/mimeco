@@ -67,16 +67,19 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint):
 
     constrained_medium_dict = {}
     for reac in model.exchanges:
+        old_bounds = reac.bounds
         met_ex, suffixe = no_compartment_id(list(reac.metabolites.keys())[0].id)
         if met_ex in list(medium.index):
-            constrained_medium_dict[met_ex+suffixe] = (-medium.loc[met_ex], reac._upper_bound)
-            reac.lower_bound = -medium.loc[met_ex]
+            constrained_medium_dict[met_ex+suffixe] = (-medium.loc[met_ex][0], reac._upper_bound)
+            reac.lower_bound = -medium.loc[met_ex][0]
         elif undescribed_metabolites_constraint == "blocked":
             constrained_medium_dict[met_ex+suffixe] = (0, reac._upper_bound)
             reac.lower_bound = 0
-        elif undescribed_metabolites_constraint == "partially_constrained":
+        elif undescribed_metabolites_constraint == "partially_constrained" and old_bounds[0] < -1:
             constrained_medium_dict[met_ex+suffixe] = (-1, reac._upper_bound)
             reac.lower_bound = -1
+        elif undescribed_metabolites_constraint == "as_is":
+            constrained_medium_dict[met_ex+suffixe] = (reac.lower_bound, reac._upper_bound)
     if constrained_medium_dict == {}:
         warnings.warn("The inputted medium constraint does not match the model's namespace. The medium could not be applied to the ecosystem model")
     return model, constrained_medium_dict
@@ -146,10 +149,10 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
     -------
     xy : pandas dataframe
     Normalized pareto points
-    maxi_model1 : float
-        maximal objective value of model1 in the ecosystem model
-    maxi_model2 : float
-        maximal objective value of model1 in the ecosystem model
+    maxi_model1 : numpy.ndarray
+        Pareto solution in which model1 objective value is the highest. 
+    maxi_model2 : numpy.ndarray
+        Pareto solution in which model2 objective value is the highest. 
     """
 
     x = []
@@ -174,7 +177,7 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
     xy.sort_values('x', inplace=True)
                
     #Add initial points, corresponding to solo models optimal objective values
-    #Values added are slightly dfferent than 1 and 0 to make sure the serie of coordinate continuous
+    #Values added are slightly dfferent than 1 and 0 to make sure the serie of coordinate is continuous
     if not ((xy['x'] == 1) & (xy['y'] == 0)).any():
         xy = xy.append({'x' : 1.00001, 'y' : -0.00001}, ignore_index=True) 
     if not ((xy['x'] == 0) & (xy['y'] == 1)).any():
@@ -205,7 +208,7 @@ def infer_interaction_score(xy):
     try:
         AUC = metrics.auc(x = xy['x'], y = xy['y'])
     except: 
-    #If the growth alone is lower than with paired model, x is not monotonous since it goes up and then down. AUC determination takes one more step.
+    #If the growth alone is lower than with paired model, x is not monotonous since it increases and then decreases. AUC determination takes one more step.
     #We calculate the AUC where x is monotonous, the AUC of the inverted part of the Pareto, and substract the last part from the first.
         AUC1 = metrics.auc(x = xy['x'][0:-1], y = xy['y'][0:-1])
         AUC2 = metrics.auc(x = xy['x'][-2:], y = xy['y'][-2:])
@@ -225,10 +228,10 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
         Score < 0 predicts a competitive interaction,
         Score = 0 predicts a neutral interaction
         Score > 0 predicts a positive interaction
-    maxi_model1 : float
-        maximal objective value of model1 in the ecosystem model
-    maxi_model2 : float
-        maximal objective value of model2 in the ecosystem model
+    maxi_model1 : numpy.ndarray
+        Pareto solution in which model1 objective value is the highest. 
+    maxi_model2 : numpy.ndarray
+        Pareto solution in which model1 objective value is the highest. 
     solo_growth_model1 : float
         Objective value of model1 when optimized alone in the described medium
     solo_growth_model2 : float
@@ -246,25 +249,37 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
         #interaction_type[0] : model1 growth better in ecosystem than alone
         #interaction_type[1] : model2 growth better in ecosystem than alone
         #interaction_type[2] : Both models share an optimal solution
-    if maxi_model1[0] > solo_growth_model1+(0.01*solo_growth_model1): #solution is an approximation, so slightly varies between instances, 
+    if maxi_model1[0] > solo_growth_model1+(0.001*solo_growth_model1): #solution is an approximation, so slightly varies between instances, 
                                                                       #we make sure the difference in growth is not an artefact
         interaction_type_code[0] = "1"        
-    if maxi_model2[1] > solo_growth_model2+(0.01*solo_growth_model2):
+    if maxi_model2[1] > solo_growth_model2+(0.001*solo_growth_model2):
         interaction_type_code[1] = "1"
     if tuple(maxi_model1) == tuple(maxi_model2) :
         interaction_type_code[2] = "1"
     interaction_type_code=''.join(interaction_type_code)
     if interaction_score < -0.0001 and interaction_type_code == "000": #Make sure score is negative despite approximation : competition
         interaction_type_code = "-000"
-    elif interaction_score > -0.0001 and interaction_score < 0.0001: #Make sure score is equivalent to 0 : neutrality
+    elif interaction_score >= -0.0001 and interaction_score <= 0.0001: #Make sure score is equivalent to 0 : neutrality
         interaction_type_code = "=000" 
-    if interaction_type_code not in ["-000", "=000", "100","010","110", "111"]:
-        raise RuntimeError("There was a problem while infering interaction_type. It is probably in the definition of the model or medium.")
+    if interaction_type_code not in ["-000", "=000", "100","010","110", "111", "011", "101"]:
+        print(interaction_type_code)
+        #raise RuntimeError("There was a problem while infering interaction_type. It is probably in the definition of the model or medium.")
     interaction_type_translation = {"-000":"competition", "=000": "neutrality", 
                                     "100":"favors model1", "010":"favors model2",
-                                    "110":"limited mutualism", "111":"mutualism"}
+                                    "110":"limited mutualism", "111":"mutualism",
+                                    "011" : "Favors model2", "101" : "favors model1"}
     interaction_type = interaction_type_translation[interaction_type_code]
     return interaction_type
+
+def pareto_plot(xy, model1_id, model2_id):
+    plt.title("Pareto front of "+model1_id+" - "+model2_id+" metabolic interaction")
+    plt.xlabel(model1_id+"'s objective value")
+    plt.ylabel(model2_id+"'s objective value")
+    plt.plot(xy['x'], xy['y'], '#ff0000', linestyle="-")
+    plt.fill_between(xy['x'], xy['y'], color = "#f08c8c30")
+    plt.axhline(y = 1, color = '#1155cc', linestyle = '--', linewidth = 1)
+    plt.axvline(x = 1, color = '#1155cc', linestyle = '--', linewidth = 1)
+    plt.show()
 
 def mocba_to_cobra(ecosys):
     """
@@ -294,7 +309,7 @@ def mocba_to_cobra(ecosys):
         reaction.add_metabolites(dict_metabolites)
     return cobra_model
 
-def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size = 1000):
+def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size):
     """
     Samples the Pareto front, infering a solution for <sample_size> points on the pareto front.
 
@@ -320,7 +335,7 @@ def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, mo
                                                         then a new reaction must be built to constrain the model to a given 
                                                         objective value through its flux)
     sample_size : int, optional
-        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. The default is 1000.
+        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass.
 
     Returns
     -------
@@ -415,12 +430,12 @@ def reac_to_met_id(reac, model_id):
     met : string
         metabolite id
     """
-
-    met = reac.replace("_e:"+model_id, "")
+    met = reac.replace("_e:"+model_id, "") #BiGG namespace
+    met = met.replace("(e):"+model_id, "") #Agora namespace
     met = met.replace("EX_", "")
     return met
     
-def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id, model2_biomass_id):
+def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_biomass_id):
     """
     Infers metabolites that are exchanged between organisms in the ecosystem models, correlated with an increasing model1 objective value.
     In other words, crossfed metabolite benefitting model1
@@ -428,8 +443,6 @@ def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id,
     Parameters
     ----------
     model1 : cobra.Model
-    model1_id : string
-        Model denomination in the cobra.Model of model1
     sampling : pandas.dataframe
         columns : reactions_id
         rows : string(objective-value-model1_objective-value-model2) for a given sample
@@ -452,10 +465,10 @@ def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id,
     """
 
     potential_crossfeeding = {}
-    for ex_reac in model1.exchanges:      
-        ecosys_reac_id_model1 = ex_reac.id+":"+model1_id
+    for ex_reac in model1.exchanges:     
+        ecosys_reac_id_model1 = ex_reac.id+":"+model1.id
         ecosys_reac_id_model2 = ex_reac.id+":"+model2_id
-        met_id = reac_to_met_id(ecosys_reac_id_model1, model1_id)      
+        met_id = reac_to_met_id(reac = ecosys_reac_id_model1, model_id = model1.id)
         #if a metabolite has an exchange reaction in both models
         if ecosys_reac_id_model1 in correlation_reactions.index and ecosys_reac_id_model2 in correlation_reactions.index:
             #if both exchange reactions have at least one non-null flux value among all samples.
@@ -483,7 +496,7 @@ def crossfed_mets(model1, model1_id, sampling, correlation_reactions, model2_id,
     else:
         return potential_crossfeeding
 
-def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id):
+def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id, namespace):
     """
     Extracts sampling data from predicted exchanged metabolites, and models objective values for each sample.
 
@@ -501,6 +514,10 @@ def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id
         Model denomination in the cobra.Model of model1
     model2_id : string
         Model denomination in the cobra.Model of model1
+    namespace : string, optionnal
+        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
+        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
+        default is "BIGG"
 
     Returns
     -------
@@ -512,20 +529,24 @@ def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id
 
     obj_value_model1 = []
     obj_value_model2 = []
+    if namespace == "BIGG":
+        suffixe = "_e"
+    elif namespace == "AGORA":
+        suffixe = "(e)"
     for i in sampling.index:      
         obj_value_model1.append(float(i.split("_", 1)[0]))
         obj_value_model2.append(float(i.split("_", 1)[1]))
     relevant_data = pd.DataFrame({"obj_value_model1" : obj_value_model1, 
                                   "obj_value_model2" : obj_value_model2})
     for metabolite in potential_crossfeeding.keys():
-        ecosys_reac_id_model1 = "EX_"+metabolite+"_e"+":"+model1_id
-        ecosys_reac_id_model2 = "EX_"+metabolite+"_e"+":"+model2_id
+        ecosys_reac_id_model1 = "EX_"+metabolite+suffixe+":"+model1_id
+        ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
         relevant_data[ecosys_reac_id_model1] = sampling[ecosys_reac_id_model1].values
         relevant_data[ecosys_reac_id_model2] = sampling[ecosys_reac_id_model2].values
     return relevant_data
 
 
-def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id):
+def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id, namespace = "BIGG"):
     """
     Visualize crossfed metablites flux evlution on along the pareto front. This visualisation is rudimentary.
     To create better and personnalized figures, use "mimeco.crossfed_metabolites_plotdata" which returns data relevant to the
@@ -545,10 +566,18 @@ def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id):
         Model denomination in the cobra.Model of model1
     model2_id : string
         Model denomination in the cobra.Model of model1
+    namespace : string, optionnal
+        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
+        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
+        default is "BIGG"
     """
 
     max_model1 = 0
     max_model2 = 0
+    if namespace == "BIGG":
+        suffixe = "_e"
+    elif namespace == "AGORA":
+        suffixe = "(e)"
     for i in sampling.index:      
         obj_value_model1 = float(i.split("_", 1)[0])
         obj_value_model2 = float(i.split("_", 1)[1])  
@@ -559,8 +588,8 @@ def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id):
             max_model2 = obj_value_model2
             max_ind_model2 = i
     for metabolite in potential_crossfeeding.keys():
-        ecosys_reac_id_model1 = "EX_"+metabolite+"_e"+":"+model1_id
-        ecosys_reac_id_model2 = "EX_"+metabolite+"_e"+":"+model2_id
+        ecosys_reac_id_model1 = "EX_"+metabolite+suffixe+":"+model1_id
+        ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
         a = sampling[ecosys_reac_id_model1]
         b = sampling[ecosys_reac_id_model2]
         plt.plot(a, "#e06666", label = model1_id)
