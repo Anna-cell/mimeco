@@ -31,7 +31,7 @@ and the corresponding value is the availability of corresponding metabolite in t
 Infering interaction score and type
 ------------------------------------
 
-First, import your models and medium in the format described precedently. It is highly advised to define their solver as "cplex" or "gurobi" 
+First, import your models and medium in the format described previously. It is highly advised to define their solver as "cplex" or "gurobi" 
 rather than the default glpk.
 
 .. code-block:: python
@@ -41,21 +41,23 @@ rather than the default glpk.
     model2 = cobra.io.read_sbml_model("resources/model2.xml")
     model2.solver = "cplex"
 
-The medium is an important parameter, it will define the metabolic environment of the organisms. Interaction will change depending on the available nutrients.
+The medium is an important parameter, it will define the metabolic environment of the organisms. The interaction will change depending on the available nutrients.
 
 .. code-block:: python
 
     medium = pd.read_csv("resources/Western_diet.csv", index_col = 0)
 
-It is also important to precise the level of constraint for influx of metabolites that are not described in medium. 
-When ``undescribed_metabolites_constraint = "blocked"``, any exchange reaction for a metabolite that is not in medium 
+It is also important to precise the level of constraint for influx of metabolites that are not described in the medium. 
+When ``undescribed_metabolites_constraint = "blocked"``, any exchange reaction for a metabolite that is not in the medium 
 will have its **lower bound set to 0**, preventing the metabolite to be made available in the medium if not from organism's secretion.
-When playing with various models and / or medium, it often prevents the models to have a non-null objective value.
+When playing with various models and / or medium, it often prevents the models from having a non-null objective value.
 
 ``undescribed_metabolites_constraint = "partially_constrained"`` sets the **lower_bound of undescribed metabolites to -1**, allowing a limited influx in the medium.
-Adequatly restraining important metabolites in medium creates limiting metabolites that will restrain organisms growth even with an imperfectly constrained medium.
+Adequately restraining important metabolites in a medium creates limiting metabolites that will restrain organisms' growth even with an imperfectly constrained medium.
 However, this can impact predicted metabolic pathways, including interactions between models. Ideally, the medium should be 
 complete enough to enable the modeled organisms to grow in a "blocked" context.
+
+``undescribed_metabolites_constraint = "as_is"`` keeps the originally set bounds for undefined metabolites exchange reactions.
 
 :py:func:`interaction_score_and_type()` function takes two models and a medium as variables, and an ``undescribed_metabolites_constraint`` level: 
 
@@ -65,13 +67,24 @@ complete enough to enable the modeled organisms to grow in a "blocked" context.
     mimeco.interaction_score_and_type(model1, model2, medium, 
     undescribed_metabolites_constraint="partially_unconstrained")
 
+Visualize the Pareto front
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+The optional argument ``plot`` is set to "False" by default. When set to "True", the function will show a matplotlib plot of the Pareto front to ease the analysis. 
+
+.. code-block:: python
+
+    interaction_score, interaction_type = 
+    mimeco.interaction_score_and_type(model1, model2, medium, 
+    undescribed_metabolites_constraint="partially_unconstrained", plot = True)
+
+
 Predicting cross-feeding between models
 ----------------------------------------
 
-The function :py:func:`crossfed_metabolites()` predicts the metabolites exchanged between the two models, that are correlated with the increase of model2 objective value.
+The function :py:func:`crossfed_metabolites()` predicts the metabolites exchanged between the two models, which are correlated with the increase of model2 objective value.
 In other words, **exchanged metabolites favoring model2's objective** (usually, growth). This can help identify cross-feeding.
 
-In addition to the precedently described inputs, this function necessitate the following elements :
+In addition to the precedently described inputs, this function necessitates the following elements :
 
 * ``solver`` : solver that you use (advised : "cplex" or "gurobi")
 * ``model1_biomass_id`` : id (str) of the reaction used as objective in model1 (if the objective coefficient is not null for several
@@ -94,6 +107,40 @@ The output is a dictionnary formatted as :
     proportion of samples with metabolite exchange from model1 to model2,
     proportion of samples with metabolite exchange from model2 to model1]}
 
-As the selected metabolites are the one favoring model2, it is interesting to run the function twice while inversing models position.
+As the selected metabolites are the ones favoring model2, it is interesting to run the function twice while inversing models positions.
+
+Options
+~~~~~~~
+
+* The optional argument ``plot`` is set to "False" by default. When set to "True", the function will show matplotlib plots of the exchanges of crossfed metabolites along the Pareto front. See <Practical example> for illustration. 
+* The optional argument ``sample_size`` is set to "1000" by default. It is the amount of solutions sampled along the Pareto front, on which the crossfeeding analysis depends. 
+* The optional argument ``retrieve_data`` is set to "False" by default. When set to "True", the function returns two variables : the potential_crossfeeding dictionnary and relevant data in the form of a pandas.DataFrame. This dataFrame contains the flux of exchange reactions of interest in each sampled solution on the Pareto front. Reactions of interest are exchange reaction for a metabolite predicted as crossfed in both organisms.
+
+.. code-block:: python
+
+   potential_crossfeeding = crossfed_metabolites(model1, model2, 
+   medium, undescribed_metabolites_constraint, solver, 
+   model1_biomass_id, model2_biomass_id, 
+   plot = True, sample_size = "10000", retrieve_data = True)
+
 
 See <Practical example> for an application of both function and interpretation of results.
+
+Infering metabolic interaction with an enterocyte
+-------------------------------------------------
+If you are interested in the interaction of an organism with the human small intestine, the general usage has been adapted in two specific functions. 
+In this case, one inputted model is joined to a small intestinal epithelial cell (sIEC), adapted from "Predicting the impact of diet and enzymopathies on human small intestinal epithelial cells", Sahoo et al, 2013, in a pairwise ecosystem. 
+
+The sIEC has been translated from matlab to sbml, and its namespace has been adapted to the **BiGG's namespace**, which is **compatible with CarveMe reconstruction**. Therefore, the model inputted should be built in the BIGG's namespace to be compatible. An option enabling the analysis in the AGORA / Virtual Metabolic Human namespace is in development, but requires further testing to be reliable.
+
+The arguments model, medium and undescribed_metabolites_constraint are the same as in global usage. 
+The sIEC has two external compartments : the lumen and the blood. The constraints inputted in the argument "medium" are applied to the lumen compartment, as it is the medium shared between the enterocyte and the other organism. The blood medium is by default constrained based on an "Average American Diet (AAD) extracted from from https://doi.org/10.1093/hmg/ddt119. 
+
+* The optional argument ``medium_blood`` allows you to input your custom blood medium. It should be a pandas.DataFrame of the following format: 
+   - Index : Exchanged metabolites with the blood (except default AAD where it is exchange reactions)
+   - column 1 : header = "lb", lower_bound to constrain the reaction with
+   - column 2 : header = "ub", upper_bound to constrain the reaction with
+
+* The optional argument ``namespace`` is set to "BIGG" by default. It can be set to "AGORA" to use the Agora / VMH namespace. /!\ This option is still in development. the results are not reliable yet /!\
+* The optional argument ``plot`` is set to "False" by default. When set to "True", the function will show a matplotlib plot of the Pareto front to ease the analysis. 
+
