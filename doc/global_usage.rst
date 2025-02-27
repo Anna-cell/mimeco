@@ -1,4 +1,4 @@
-Usage
+Global usage
 =======
 
 Models and medium formats
