@@ -33,9 +33,7 @@ def restrain_blood_exchange_enterocyte(model, namespace, medium_blood = "AAD"):
         Index : Exchanged metabolites with the blood (excpet default AAD where it is exchange reactions)
         column 1 : header = "lb", lower_bound to constrain the reaction with
         column 2 : header = "ub", upper_bound to constrain the reaction with
-        NOTE : blood exchange reaction are written in the opposite direction as usual exchange reaction. 
-        As a result, a negative flux is an export flux (from the cell to the blood) and a positive flux is an import flux (from the blood to the cell). 
-        default : None; In this case, applies the Average American diet (AAD) from https://doi.org/10.1093/hmg/ddt119
+        default : "AAD"; In this case, applies the Average American diet (AAD) from https://doi.org/10.1093/hmg/ddt119
     Returns
     -------
     model : cobra.Model
@@ -54,15 +52,19 @@ def restrain_blood_exchange_enterocyte(model, namespace, medium_blood = "AAD"):
             for reac in medium_blood.index:
                 model.reactions.get_by_id(reac).bounds = (AAD_medium_blood.loc[reac,'lb'],AAD_medium_blood.loc[reac,'ub'])
         else:
-            raise TypeError("The inputted blood medium is a string when it should be a pandas.DataFrame with exchanged metabolites as index"+ 
+            raise TypeError("The inputted blood medium is a string when it should be a pandas.DataFrame with exchanged metabolites as index "+ 
                              "and lb and ub as columns. You can also keep the default value \"AAD\" to use an average american diet as constraints.")
     else: #custom medium
-        for blood_reac in blood_reactions:
-            ex_met = utils.no_compartment_id(model.reactions.get_by_id(blood_reac).reactants[0].id)[0]
-            if ex_met in medium_blood.index:
-                ex_reac = model.reactions.get_by_id(blood_reac)
-                ex_reac.bounds = (medium_blood.loc[ex_met,'lb'], medium_blood.loc[ex_met,'ub'])
-            else:
-                ex_reac = model.reactions.get_by_id(blood_reac)
-                ex_reac.bounds = (0,1000) #undefined metabolites can be secreted in the blood but not absorbed by the enterocyte.
+        try:
+            for blood_reac in blood_reactions:
+                ex_met = utils.no_compartment_id(model.reactions.get_by_id(blood_reac).reactants[0].id)[0]
+                if ex_met in medium_blood.index:
+                    ex_reac = model.reactions.get_by_id(blood_reac)
+                    ex_reac.bounds = (medium_blood.loc[ex_met,'lb'], medium_blood.loc[ex_met,'ub'])
+                else:
+                    ex_reac = model.reactions.get_by_id(blood_reac)
+                    ex_reac.bounds = (0,1000) #undefined metabolites can be secreted in the blood but not absorbed by the enterocyte.
+        except:
+            raise ValueError("You inputted a custom medium for the blood compartment, but it is not fully compatible with the model's namespace."+
+            "Please check its format and the metabolites' ids.")
     return model

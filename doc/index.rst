@@ -15,4 +15,5 @@ Contents
 
    Home <self>
    installation
-   usage
+   global_usage
+   enterocyte_specific_analysis
