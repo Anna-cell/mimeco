@@ -53,16 +53,27 @@ potential_crossfeeding = mimeco.enterocyte_crossfed_metabolites(model = model1, 
 
 
 # AGORA namespace
-
+Western_diet = pd.read_csv("mimeco/resources/Western_diet_VMH.csv", index_col = 0)
 bact_agora2 = cobra.io.load_matlab_model("/home/e158401a/Documents/CH2_FB/AGORA2_bacteria/Lactobacillus_rhamnosus_GG_ATCC_53103.mat")
 bact_agora2.solver = "cplex"
 
 #host = cobra.io.read_sbml_model("/home/e158401a/Documents/mimeco/mimeco/resources/enterocyte_VMH_v3.xml")
 #host2 = cobra.io.read_sbml_model("/home/e158401a/Documents/CH2_FB/enterocyte_VMH.xml")
 
-bact_agora2_biomass_id = "Growth" 
+
+int_score, int_type = mimeco.enterocyte_interaction_score_and_type(bact_agora2, Western_diet, undescribed_metabolites_constraint="as_is", 
+                                                                   namespace="AGORA", plot=True)
+host = cobra.io.read_sbml_model("mimeco/resources/enterocyte_VMH_v3.xml")
+for reac in bact_agora2.reactions:
+    if "biomass" in reac.id and "EX_" not in reac.id:
+        bact_agora2_biomass_id = reac.id
+        
+for reac in host.reactions:
+    if "biomass" in reac.id and "EX_" not in reac.id:
+        host_biomass_id = reac.id
+
 potential_crossfeeding = mimeco.enterocyte_crossfed_metabolites(model = bact_agora2, medium = Western_diet, undescribed_metabolites_constraint = "as_is", 
-                                                                solver = "cplex", model_biomass_id = bact_agora2, namespace = "AGORA", 
+                                                                solver = "cplex", model_biomass_id = bact_agora2_biomass_id, namespace = "AGORA", 
                                                                 plot = True, sample_size = 1000)
 
 
