@@ -15,4 +15,4 @@ Contents
 
    Home <self>
    installation
-   usage
+   global_usage
