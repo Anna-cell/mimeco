@@ -1,5 +1,5 @@
 Global usage
-=======
+============
 
 Models and medium formats
 -------------------------
@@ -87,8 +87,10 @@ In other words, **exchanged metabolites favoring model2's objective** (usually, 
 In addition to the precedently described inputs, this function necessitates the following elements :
 
 * ``solver`` : solver that you use (advised : "cplex" or "gurobi")
+
 * ``model1_biomass_id`` : id (str) of the reaction used as objective in model1 (if the objective coefficient is not null for several
   reactions then a new reaction must be built to constrain the model to a given objective value through its flux)
+
 * ``model2_biomass_id`` : id (str) of the reaction used as objective in model2 (if the objective coefficient is not null for several
   reactions then a new reaction must be built to constrain the model to a given objective value through its flux)
 
@@ -113,7 +115,9 @@ Options
 ~~~~~~~
 
 * The optional argument ``plot`` is set to "False" by default. When set to "True", the function will show matplotlib plots of the exchanges of crossfed metabolites along the Pareto front. See <Practical example> for illustration. 
+
 * The optional argument ``sample_size`` is set to "1000" by default. It is the amount of solutions sampled along the Pareto front, on which the crossfeeding analysis depends. 
+
 * The optional argument ``retrieve_data`` is set to "False" by default. When set to "True", the function returns two variables : the potential_crossfeeding dictionnary and relevant data in the form of a pandas.DataFrame. This dataFrame contains the flux of exchange reactions of interest in each sampled solution on the Pareto front. Reactions of interest are exchange reaction for a metabolite predicted as crossfed in both organisms.
 
 .. code-block:: python
