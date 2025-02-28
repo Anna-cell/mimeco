@@ -37,7 +37,7 @@ rather than the default glpk.
 .. code-block:: python
 
     model1 = cobra.io.read_sbml_model("resources/model1.xml")
-    model1.solcer = "cplex"
+    model1.solver = "cplex"
     model2 = cobra.io.read_sbml_model("resources/model2.xml")
     model2.solver = "cplex"
 
@@ -47,17 +47,18 @@ The medium is an important parameter, it will define the metabolic environment o
 
     medium = pd.read_csv("resources/Western_diet.csv", index_col = 0)
 
-It is also important to precise the level of constraint for influx of metabolites that are not described in the medium. 
-When ``undescribed_metabolites_constraint = "blocked"``, any exchange reaction for a metabolite that is not in the medium 
+It is also important to precise the **level of constraint for influx of metabolites that are not described in the medium**. 
+
+* ``undescribed_metabolites_constraint = "blocked"``, any exchange reaction for a metabolite that is not in the medium 
 will have its **lower bound set to 0**, preventing the metabolite to be made available in the medium if not from organism's secretion.
 When playing with various models and / or medium, it often prevents the models from having a non-null objective value.
 
-``undescribed_metabolites_constraint = "partially_constrained"`` sets the **lower_bound of undescribed metabolites to -1**, allowing a limited influx in the medium.
+* ``undescribed_metabolites_constraint = "partially_constrained"`` sets the **lower_bound of undescribed metabolites to -1**, allowing a limited influx in the medium.
 Adequately restraining important metabolites in a medium creates limiting metabolites that will restrain organisms' growth even with an imperfectly constrained medium.
 However, this can impact predicted metabolic pathways, including interactions between models. Ideally, the medium should be 
 complete enough to enable the modeled organisms to grow in a "blocked" context.
 
-``undescribed_metabolites_constraint = "as_is"`` keeps the originally set bounds for undefined metabolites exchange reactions.
+* ``undescribed_metabolites_constraint = "as_is"`` keeps the originally set bounds for undefined metabolites exchange reactions.
 
 :py:func:`interaction_score_and_type()` function takes two models and a medium as variables, and an ``undescribed_metabolites_constraint`` level: 
 
@@ -67,8 +68,8 @@ complete enough to enable the modeled organisms to grow in a "blocked" context.
     mimeco.interaction_score_and_type(model1, model2, medium, 
     undescribed_metabolites_constraint="partially_unconstrained")
 
-Visualize the Pareto front
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Options
+~~~~~~~
 The optional argument ``plot`` is set to "False" by default. When set to "True", the function will show a matplotlib plot of the Pareto front to ease the analysis. 
 
 .. code-block:: python

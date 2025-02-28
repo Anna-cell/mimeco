@@ -1,1 +1,2 @@
 import mimeco.utils
+import mimeco.enterocyte_specific_utils

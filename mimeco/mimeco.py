@@ -12,7 +12,6 @@ Created on Mon Jan 20 09:46:31 2025
 
 import mimeco.utils as utils
 import mimeco.enterocyte_specific_utils as enterocyte_specific_utils
-import pickle
 import warnings
 import cobra
 
@@ -195,7 +194,7 @@ def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolite
         Rudimentary integrated plot function to visualize Pareto front.
         default is False
     retrieve_data : boolean, optional
-        If true, the function returns a second variable, which is a dataframe constaining data relevant for analysis.
+        If True, the function returns a second variable, which is a dataframe constaining data relevant for analysis.
         default is False
 
     Returns
