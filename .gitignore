@@ -1,3 +1,5 @@
 # ignore following files :
 __pycache__
 sandbox.py
+dist/
+mimeco.egg-info/
