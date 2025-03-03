@@ -42,6 +42,7 @@ Predicting cross-feeding between models
 This function predicts exchanged metabolites that favor enterocyte maintenance. 
 
 .. code-block:: python
+  
   potential_crossfeeding = mimeco.enterocyte_crossfed_metabolites(model = model1, medium = Western_diet, undescribed_metabolites_constraint = "as_is", 
                                                                 solver = "cplex", model_biomass_id = model1_biomass_id, namespace = "BIGG", 
                                                                 plot = True, sample_size = 1000)
