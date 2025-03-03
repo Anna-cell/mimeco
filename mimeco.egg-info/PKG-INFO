@@ -1,9 +1,0 @@
-Metadata-Version: 2.1
-Name: mimeco
-Version: 0.1
-Summary: Multi-objective GEMs metabolic interaction inference
-Author: Anna Lambert
-Author-email: anna.lambert@univ-nantes.fr
-Classifier: Programming Language :: Python :: 3
-Classifier: Operating System :: OS Independent
-Requires-Python: >=3.7
