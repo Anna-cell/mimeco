@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mimeco"
+version = "0.1.4"
+authors = [
+    {name = "Anna LAMBERT", email = "anna.lambert@univ-nantes.fr"},
+]
+description = "Multi-objective GEMs metabolic interaction inference"
+keywords = ["GEMs", "Multi-objective linear programming", "bioinformatics", "metabolic modelling", "community modelling"]
+readme = "README.rst"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pandas",
+    "cobra",
+    "matplotlib",
+    "scikit-learn",
+]

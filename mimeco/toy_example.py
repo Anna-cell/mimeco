@@ -37,11 +37,11 @@ model1_biomass_id = "Growth"
 model2_biomass_id = "Growth"
 
 potential_exchange, data = mimeco.crossfed_metabolites_plotdata(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
-                               solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id, plot = True, retrieve_data = True)
+                               solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id, plot = True, retrieve_data = "selection")
 
 
 potential_exchange2, data2 = mimeco.crossfed_metabolites_plotdata(model1 = model2, model2 = model1, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
-                               solver = "cplex", model1_biomass_id = model2_biomass_id, model2_biomass_id = model1_biomass_id, plot=True, retrieve_data = True)
+                               solver = "cplex", model1_biomass_id = model2_biomass_id, model2_biomass_id = model1_biomass_id, plot=True, retrieve_data = "all")
 #with enterocyte
 
 int_score, int_type = mimeco.enterocyte_interaction_score_and_type(model1, Western_diet, undescribed_metabolites_constraint="as_is", 

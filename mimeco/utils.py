@@ -435,10 +435,10 @@ def reac_to_met_id(reac, model_id):
     met = met.replace("EX_", "")
     return met
     
-def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_biomass_id):
+def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_biomass_id, exchange_correlation = 0.5, biomass_correlation = 0.8):
     """
     Infers metabolites that are exchanged between organisms in the ecosystem models, correlated with an increasing model1 objective value.
-    In other words, crossfed metabolite benefitting model1
+    In other words, crossfed metabolite benefitting model1. Correlation options can be customized. Spearman correlation is used.
 
     Parameters
     ----------
@@ -454,6 +454,11 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
         id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, 
                                                         then a new reaction must be built to constrain the model to a given 
                                                         objective value through its flux)
+    exchange_correlation : float between 0 and -1
+        defines the level correlation between secretion and uptake of a same metabolite by paired models
+        default is 0.5
+    biomass_correlation : float between 0 and 1
+        correlation between the exchange of the metabolite and the biomass production of model2 for its selection as crossfed.
 
     Returns
     -------
@@ -473,9 +478,9 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
         if ecosys_reac_id_model1 in correlation_reactions.index and ecosys_reac_id_model2 in correlation_reactions.index:
             #if both exchange reactions have at least one non-null flux value among all samples.
             #and if both reactions are inversely correlated (fluxes variation are going opposite ways, one toward secretion, the other toward uptake)
-            if sum(sampling[ecosys_reac_id_model1])!=0 and sum(sampling[ecosys_reac_id_model2])!=0 and correlation_reactions.loc[ecosys_reac_id_model1, ecosys_reac_id_model2] <= -0.5:
+            if sum(sampling[ecosys_reac_id_model1])!=0 and sum(sampling[ecosys_reac_id_model2])!=0 and correlation_reactions.loc[ecosys_reac_id_model1, ecosys_reac_id_model2] <= -exchange_correlation:
                 # If the uptake / secretion of given metabolite in model1, associated with its secretion / uptake in model2, is correlated with increased model2 objective value
-                if correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id] > 0.8:
+                if correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id] > biomass_correlation:
                     exchange = 0
                     model1_to_model2 = 0
                     model2_to_model1 = 0
@@ -496,7 +501,7 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
     else:
         return potential_crossfeeding
 
-def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id, namespace):
+def extract_sampling_data(sampling, potential_crossfeeding, model1_id, model2_id, namespace = "BIGG"):
     """
     Extracts sampling data from predicted exchanged metabolites, and models objective values for each sample.
 
@@ -521,7 +526,7 @@ def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id
 
     Returns
     -------
-    relevant_data : pandas dataframe
+    sampling_data : pandas dataframe
         Dataframe based on the sampling, resulting in each rw bing a sample.
         The first two columns records the objective value, in the given sample, of both models.
         Other columns are, by pairs, the flux values of the exchange reactions of a crossfed metabolite for both models.
@@ -536,14 +541,14 @@ def extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id
     for i in sampling.index:      
         obj_value_model1.append(float(i.split("_", 1)[0]))
         obj_value_model2.append(float(i.split("_", 1)[1]))
-    relevant_data = pd.DataFrame({"obj_value_model1" : obj_value_model1, 
+    sampling_data = pd.DataFrame({"obj_value_model1" : obj_value_model1, 
                                   "obj_value_model2" : obj_value_model2})
     for metabolite in potential_crossfeeding.keys():
         ecosys_reac_id_model1 = "EX_"+metabolite+suffixe+":"+model1_id
         ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
-        relevant_data[ecosys_reac_id_model1] = sampling[ecosys_reac_id_model1].values
-        relevant_data[ecosys_reac_id_model2] = sampling[ecosys_reac_id_model2].values
-    return relevant_data
+        sampling_data[ecosys_reac_id_model1] = sampling[ecosys_reac_id_model1].values
+        sampling_data[ecosys_reac_id_model2] = sampling[ecosys_reac_id_model2].values
+    return sampling_data
 
 
 def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id, namespace = "BIGG"):

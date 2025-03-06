@@ -159,12 +159,12 @@ def crossfed_metabolites(model1, model2, medium, undescribed_metabolites_constra
     return potential_crossfeeding
 
 def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolites_constraint, solver, model1_biomass_id, 
-                        model2_biomass_id, sample_size = 1000, plot = False, retrieve_data = False):
+                        model2_biomass_id, sample_size = 1000, exchange_correlation = 0.5, biomass_correlation = 0.8, 
+                        plot = False, retrieve_data = "no"):
     """
-    Compute the same analysis as "crossfed_metabolites". Additionnaly returns a dataframe containing data judged relevant 
-    from the analysis. Specifically, the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
-    as well as the objective value of each model in these samples. 
-    Allows personnalized analysis and visualisation of predicted crossfeeding
+    A function that, given 2 models in the same namespace and a defined medium, predicts metabolic exchanges that
+    are correlated with the increase of model2 objective value. Correlation options can be customized. Spearman correlation is used.
+    plot and retrieve_data options enable further analysis (see documentation)
 
     Parameters
     ----------
@@ -190,12 +190,21 @@ def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolite
                                                         objective value through its flux)
     sample_size : int, optional
         Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. The default is 1000.
+    exchange_correlation : float between 0 and -1
+        defines the level correlation between secretion and uptake of a same metabolite by paired models
+        default is 0.5
+    biomass_correlation : float between 0 and 1
+        correlation between the exchange of the metabolite and the biomass production of model2 for its selection as crossfed.
     plot : Boolean, optional
         Rudimentary integrated plot function to visualize Pareto front.
         default is False
-    retrieve_data : boolean, optional
-        If True, the function returns a second variable, which is a dataframe constaining data relevant for analysis.
-        default is False
+    retrieve_data : str, optionnal
+        Returns data that can be used for custom analysis.
+        "all" : returns the sampling dataframe containing the fluxes of each reaction of the ecosystem in all samples. 
+        "selection": returns a subset of the sampling dataframe, containing the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
+    as well as the objective value of each model in these samples.
+        If retrieve_data is set on "all" or "selection", the function returns a second variable with the corresponding dataframe. 
+        default is "no"
 
     Returns
     -------
@@ -204,10 +213,13 @@ def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolite
         values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
         proportion of samples with metabolite exchange from model1 to model2, 
         proportion of samples with metabolite exchange from model2 to model1]
-    relevant_data : pandas dataframe
-        Dataframe based on the sampling, resulting in each row bing a sample.
+    sampling_data : pandas dataframe
+        Dataframe based on the sampling, resulting in each row being a sample.
+        if retrieve_data == "selection"
         The first two columns records the objective value, in the given sample, of both models.
         Other columns are, by pairs, the flux values of the exchange reactions of a crossfed metabolite for both models.
+        if retrieve_data == "all" 
+        Columns are all reaction of the ecosystem model in the order of ecosys.reactions.
     """
     
     metabolic_dict = utils.create_ecosystem_metabolic_dict(model1, model2)
@@ -242,12 +254,15 @@ def crossfed_metabolites_plotdata(model1, model2, medium, undescribed_metabolite
     correlation_reactions = utils.correlation(sampling)
     potential_crossfeeding = utils.crossfed_mets(model1 = model1, sampling = sampling, 
                                                 correlation_reactions = correlation_reactions, model2_id = model2_id, 
-                                                model2_biomass_id=model2_biomass_id)
+                                                model2_biomass_id=model2_biomass_id, exchange_correlation = exchange_correlation, 
+                                                biomass_correlation = biomass_correlation)
     if plot: #Visualize pareto front
         utils.plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id)
-    if retrieve_data:
-        relevant_data = utils.extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id)
-        return potential_crossfeeding, relevant_data
+    if retrieve_data == "all":
+        return potential_crossfeeding, sampling
+    if retrieve_data == "selection":
+        sampling_data = utils.extract_sampling_data(sampling, potential_crossfeeding, model1_id, model2_id)
+        return potential_crossfeeding, sampling_data
     else:
         return potential_crossfeeding
 
@@ -331,7 +346,8 @@ def enterocyte_interaction_score_and_type(model, medium, undescribed_metabolites
         utils.pareto_plot(xy, "enterocyte", model2_id)
     return interaction_score, interaction_type
 
-def enterocyte_crossfed_metabolites(model, medium, undescribed_metabolites_constraint, solver, model_biomass_id, namespace = "BIGG", plot = False, sample_size = 1000, retrieve_data = False):
+def enterocyte_crossfed_metabolites(model, medium, undescribed_metabolites_constraint, solver, model_biomass_id, namespace = "BIGG", 
+                                    plot = False, sample_size = 1000, retrieve_data = "no"):
     """
     A function that, given 2 models in the same namespace and a defined medium, predicts metabolic exchanges that
     are correlated with the increase of model2 objective value.
@@ -357,9 +373,13 @@ def enterocyte_crossfed_metabolites(model, medium, undescribed_metabolites_const
         Rudimentary integrated plot function to visualize Pareto front.
     sample_size : int, optional
         Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. The default is 1000.
-    retrieve_data : boolean, optional
-        If true, the function returns a second variable, which is a dataframe constaining data relevant for analysis.
-        default is False
+    retrieve_data : str, optionnal
+        Returns data that can be used for custom analysis.
+        "all" : returns the sampling dataframe containing the fluxes of each reaction of the ecosystem in all samples. 
+        "selection": returns a subset of the sampling dataframe, containing the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
+        as well as the objective value of each model in these samples.
+        If retrieve_data is set on "all" or "selection", the function returns a second variable with the corresponding dataframe. 
+        default is "no"
 
     Returns
     -------
@@ -368,6 +388,13 @@ def enterocyte_crossfed_metabolites(model, medium, undescribed_metabolites_const
         values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
         proportion of samples with metabolite exchange from model1 to model2, 
         proportion of samples with metabolite exchange from model2 to model1]
+    sampling_data : pandas dataframe
+        Dataframe based on the sampling, resulting in each row being a sample.
+        if retrieve_data == "selection"
+        The first two columns records the objective value, in the given sample, of both models.
+        Other columns are, by pairs, the flux values of the exchange reactions of a crossfed metabolite for both models.
+        if retrieve_data == "all" 
+        Columns are all reaction of the ecosystem model in the order of ecosys.reactions.
     """
     
     if namespace == "BIGG":
@@ -418,8 +445,11 @@ def enterocyte_crossfed_metabolites(model, medium, undescribed_metabolites_const
                                                 model2_id = host.id, model2_biomass_id = host_biomass_id)
     if plot: #Visualize pareto front
         utils.plot_exchange(sampling, potential_crossfeeding, host.id, model_id, namespace = namespace)
-    if retrieve_data:
+    if retrieve_data == "all":
+        sampling_data = sampling
+        return potential_crossfeeding, sampling_data
+    if retrieve_data == "selection":
         relevant_data = utils.extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id, namespace = namespace)
-        return potential_crossfeeding, relevant_data
+        return potential_crossfeeding, sampling_data
     else:
         return potential_crossfeeding
