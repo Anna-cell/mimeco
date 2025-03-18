@@ -7,8 +7,9 @@ Created on Mon Feb 01 16:11:15 2025
 """
 import pandas as pd
 import mimeco.utils as utils
+from importlib.resources import files
 
-blood_reactions = pd.read_csv("mimeco/resources/blood_reactions_id_enterocyte.csv")
+blood_reactions = pd.read_csv(files("resources").joinpath('blood_reactions_id_enterocyte.csv'))
 blood_reactions = blood_reactions["blood_exchanges"].tolist()
 
 # AAD Must be lb ub because blood is different... will need different format. (two columns)
@@ -42,10 +43,10 @@ def restrain_blood_exchange_enterocyte(model, namespace, medium_blood = "AAD"):
         sIEC with blood exchanges constrained
     """
     if namespace == "BIGG":
-        AAD_medium_blood = pd.read_csv("mimeco/resources/AAD_BiGG.tsv", sep="\t", index_col = 0)
+        AAD_medium_blood = pd.read_csv(files("resources").joinpath(AAD_BiGG.tsv), sep="\t", index_col = 0)
         #blood_suffixe = "(e)"
     elif namespace == "AGORA":
-        AAD_medium_blood = pd.read_csv("mimeco/resources/AAD_VMH.tsv", sep="\t", index_col = 0)
+        AAD_medium_blood = pd.read_csv(files("resources").joinpath(AAAD_VMH.tsv), sep="\t", index_col = 0)
         #blood_suffixe = "_b"
     #Constrain exchanges with blood compartment
     if isinstance(medium_blood, str):

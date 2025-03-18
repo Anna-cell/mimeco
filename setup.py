@@ -21,3 +21,4 @@ install_requires=[
 'matplotlib >= 3.5'])
 #mocpaby, solver
 #warnings, math : builtin
+include_package_data=True

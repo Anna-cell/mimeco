@@ -25,9 +25,11 @@ model1.solver = "cplex"
 model2.solver = "cplex"
 
 #score and type
-
+import time
+start_time = time.time()
 int_score, int_type = mimeco.interaction_score_and_type(model1, model2, Western_diet, 
                                                         undescribed_metabolites_constraint="as_is", plot=True)
+print("--- %s seconds ---" % (time.time() - start_time))
 
 int_score, int_type = mimeco.interaction_score_and_type(model1, model2, Western_diet, 
                                                         undescribed_metabolites_constraint="partially_constrained", plot=True)
@@ -43,14 +45,15 @@ potential_exchange, data = mimeco.crossfed_metabolites_plotdata(model1 = model1,
 potential_exchange2, data2 = mimeco.crossfed_metabolites_plotdata(model1 = model2, model2 = model1, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
                                solver = "cplex", model1_biomass_id = model2_biomass_id, model2_biomass_id = model1_biomass_id, plot=True, retrieve_data = "all")
 #with enterocyte
-
+start_time = time.time()
 int_score, int_type = mimeco.enterocyte_interaction_score_and_type(model1, Western_diet, undescribed_metabolites_constraint="as_is", 
                                                                    namespace="BIGG", plot=True)
+print("--- %s seconds ---" % (time.time() - start_time))
 
 potential_crossfeeding = mimeco.enterocyte_crossfed_metabolites(model = model1, medium = Western_diet, undescribed_metabolites_constraint = "as_is", 
                                                                 solver = "cplex", model_biomass_id = model1_biomass_id, namespace = "BIGG", 
                                                                 plot = True, sample_size = 1000)
-
+host = cobra.io.read_sbml_model("mimeco/resources/enterocyte_BiGG.xml")
 
 # AGORA namespace
 
