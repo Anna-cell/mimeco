@@ -8,16 +8,18 @@ Created on Mon Jan 20 14:38:53 2025
 """
 
 import os
-os.chdir("/home/e158401a/Documents/mimeco")
+#os.chdir("/home/e158401a/Documents/mimeco")
 import cobra
 import mimeco.mimeco as mimeco
 import pandas as pd
+from importlib.resources import files
+
 
 #test bacteria - bacteria interaction inference
 
 #BiGGs namespace
 
-Western_diet = pd.read_csv("mimeco/resources/Western_diet_BiGG.csv", index_col = 0)
+Western_diet = pd.read_csv(files("mimeco.resources").joinpath("Western_diet_BiGG.csv"), index_col = 0)
 
 model1 = cobra.io.read_sbml_model("/home/e158401a/Documents/models/embl_gems/models/b/bifidobacterium/Bifidobacterium_adolescentis_ATCC_15703.xml")
 model2 = cobra.io.read_sbml_model("/home/e158401a/Documents/models/embl_gems/models/l/lactobacillus/Lactobacillus_rhamnosus_GG_GG_ATCC_53103.xml")
