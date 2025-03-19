@@ -304,9 +304,9 @@ def enterocyte_interaction_score_and_type(model, medium, undescribed_metabolites
         Qualitative description of the interaction.
     """
     if namespace == "BIGG":
-        host = cobra.io.read_sbml_model(files("resources").joinpath('enterocyte_BiGG.xml'))
+        host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_BiGG.xml'))
     elif namespace == "AGORA":
-        host = cobra.io.read_sbml_model(files("resources").joinpath('enterocyte_VMH_v3.xml'))
+        host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_VMH_v3.xml'))
     host.solver = "cplex"
     host.objective = host.reactions.get_by_id('biomass_reactionIEC01b')
     metabolic_dict = utils.create_ecosystem_metabolic_dict(host, model)
@@ -400,9 +400,9 @@ def enterocyte_crossfed_metabolites(model, medium, undescribed_metabolites_const
     """
     
     if namespace == "BIGG":
-        host = cobra.io.read_sbml_model(files("resources").joinpath('enterocyte_BiGG.xml'))
+        host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_BiGG.xml'))
     elif namespace == "AGORA":
-        host = cobra.io.read_sbml_model(files("resources").joinpath('enterocyte_VMH_v3.xml'))
+        host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_VMH_v3.xml'))
     host.solver = "cplex"
     host.objective = host.reactions.get_by_id('biomass_reactionIEC01b')
     host_biomass_id = 'biomass_reactionIEC01b'
