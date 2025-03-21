@@ -125,7 +125,7 @@ def mo_fba(model1, model2, metabolic_dict, constrained_medium_dict):
 
     model1 = unrestrain_medium(model1)
     model2 = unrestrain_medium(model2)
-    ecosys = create_model(model_array=[model1, model2], metabolic_dict=metabolic_dict, diet = constrained_medium_dict)
+    ecosys = create_model(model_array=[model1, model2], metabolic_dict=metabolic_dict, medium = constrained_medium_dict)
     bensolve_opts = bensolve_default_options()
     bensolve_opts['message_level'] = 0
     sol_mofba = mocbapy.analysis.mo_fba(ecosys, options=bensolve_opts)
@@ -179,7 +179,8 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
     #Add initial points, corresponding to solo models optimal objective values
     #Values added are slightly dfferent than 1 and 0 to make sure the serie of coordinate is continuous
     if not ((xy['x'] == 1) & (xy['y'] == 0)).any():
-        xy = xy.append({'x' : 1.00001, 'y' : -0.00001}, ignore_index=True) 
+        xy = pd.concat([xy, pd.DataFrame([{'x' : 1.00001, 'y' : -0.00001}])], ignore_index=True)
+        #xy = xy.append({'x' : 1.00001, 'y' : -0.00001}, ignore_index=True) 
     if not ((xy['x'] == 0) & (xy['y'] == 1)).any():
         xy.loc[-1] = [-0.00001, 1.00001]
         xy.index = xy.index + 1  # shifting index
@@ -275,8 +276,8 @@ def pareto_plot(xy, model1_id, model2_id):
     plt.title("Pareto front of "+model1_id+" - "+model2_id+" metabolic interaction")
     plt.xlabel(model1_id+"'s objective value")
     plt.ylabel(model2_id+"'s objective value")
-    plt.plot(xy['x'], xy['y'], '#ff0000', linestyle="-")
-    plt.fill_between(xy['x'], xy['y'], color = "#f08c8c30")
+    plt.plot(xy['x'].to_numpy(), xy['y'].to_numpy(), '#ff0000', linestyle="-")
+    plt.fill_between(xy['x'].to_numpy(), xy['y'].to_numpy(), color = "#f08c8c30")
     plt.axhline(y = 1, color = '#1155cc', linestyle = '--', linewidth = 1)
     plt.axvline(x = 1, color = '#1155cc', linestyle = '--', linewidth = 1)
     plt.show()

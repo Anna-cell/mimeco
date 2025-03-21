@@ -37,9 +37,9 @@ rather than the default glpk.
 .. code-block:: python
 
     model1 = cobra.io.read_sbml_model("resources/model1.xml")
-    model1.solver = "cplex"
+    model1.solver = "gurobi"
     model2 = cobra.io.read_sbml_model("resources/model2.xml")
-    model2.solver = "cplex"
+    model2.solver = "gurobi"
 
 The medium is an important parameter, it will define the metabolic environment of the organisms. The interaction will change depending on the available nutrients.
 
@@ -55,13 +55,13 @@ It is also important to precise the **level of constraint for influx of metaboli
 
 * ``undescribed_metabolites_constraint = "as_is"`` keeps the originally set bounds for undefined metabolites exchange reactions.
 
-:py:func:`interaction_score_and_type()` function takes two models and a medium as variables, and an ``undescribed_metabolites_constraint`` level: 
+:py:func:`interaction_score_and_type()` function takes two models and a medium as variables, and an ``undescribed_metabolites_constraint`` level. You must also state the solver you use: 
 
 .. code-block:: python
 
     interaction_score, interaction_type = 
-    mimeco.interaction_score_and_type(model1, model2, medium, 
-    undescribed_metabolites_constraint="partially_unconstrained")
+    mimeco.analysis.interaction_score_and_type(model1, model2, medium, 
+    undescribed_metabolites_constraint="partially_unconstrained", solver="gurobi")
 
 Options
 ~~~~~~~
@@ -70,7 +70,7 @@ The optional argument ``plot`` is set to "False" by default. When set to "True",
 .. code-block:: python
 
     interaction_score, interaction_type = 
-    mimeco.interaction_score_and_type(model1, model2, medium, 
+    mimeco.analysis.interaction_score_and_type(model1, model2, medium, 
     undescribed_metabolites_constraint="partially_unconstrained", plot = True)
 
 
@@ -92,7 +92,7 @@ In addition to the precedently described inputs, this function necessitates the 
 
 .. code-block:: python
 
-    potential_crossfeeding = crossfed_metabolites(model1, model2, 
+    potential_crossfeeding = mimeco.analysis.crossfed_metabolites(model1, model2, 
     medium, undescribed_metabolites_constraint, solver, 
     model1_biomass_id, model2_biomass_id)
 
@@ -114,7 +114,16 @@ Options
 
 * The optional argument ``sample_size`` is set to "1000" by default. It is the amount of solutions sampled along the Pareto front, on which the crossfeeding analysis depends. 
 
-* The optional argument ``retrieve_data`` is set to "False" by default. When set to "True", the function returns two variables : the potential_crossfeeding dictionnary and relevant data in the form of a pandas.DataFrame. This dataFrame contains the flux of exchange reactions of interest in each sampled solution on the Pareto front. Reactions of interest are exchange reaction for a metabolite predicted as crossfed in both organisms.
+* The optional argument ``retrieve_data`` is set to "no" by default. **When set to "selection"**, the function 
+  returns two variables: the potential_crossfeeding dictionnary and relevant data in the form of a pandas.DataFrame. 
+  This dataFrame contains the flux of exchange reactions of interest in each sampled solution on the Pareto front. 
+  Reactions of interest are exchange reaction for a metabolite predicted as crossfed in both organisms.
+  
+  **When set to "all"**, the function returns two variables: the potential_crossfeeding dictionnary and a Dataframe containing the sampling results for every reactions of the ecosystem model.
+
+* The optional argument ``exchange_correlation`` is set to 0.5 by default. Defines the threshold for a correlation between secretion and uptake of a same metabolite by paired models for this metabolite to be considered exchanged between models.
+
+* The optional argument ``biomass_correlation`` is set to 0.8 by default. Defines the correlation threshhold between the exchange of the metabolite and the biomass production of model2 for its selection as crossfed.
 
 .. code-block:: python
 

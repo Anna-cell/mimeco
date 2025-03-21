@@ -16,8 +16,8 @@ The sIEC has two external compartments : the lumen and the blood. The constraint
 
 .. code-block:: python
 
-  int_score, int_type = mimeco.enterocyte_interaction_score_and_type(model1, Western_diet,
-                                                                    undescribed_metabolites_constraint="as_is")
+  int_score, int_type = mimeco.analysis.enterocyte_interaction_score_and_type(model1, Western_diet,
+                                                                    undescribed_metabolites_constraint="as_is", solver = "gurobi")
 
 * The optional argument ``medium_blood`` allows you to input your custom blood medium. It should be a pandas.DataFrame of the following format:
 
@@ -33,16 +33,18 @@ The sIEC has two external compartments : the lumen and the blood. The constraint
 .. code-block:: python
 
   int_score, int_type = mimeco.enterocyte_interaction_score_and_type(model1, Western_diet, 
-                                                                    undescribed_metabolites_constraint="as_is", 
-                                                                    namespace="BIGG", plot = True)
+                                                                    undescribed_metabolites_constraint="as_is",
+                                                                    solver = "gurobi" 
+                                                                    namespace="BIGG", plot = False)
 
 Predicting cross-feeding between models
 ---------------------------------------
 
-This function predicts exchanged metabolites that favor enterocyte maintenance. 
+This function predicts exchanged metabolites that favor enterocyte maintenance. Its options are the same as in the corresponding functions in global usage. 
 
 .. code-block:: python
   
-  potential_crossfeeding = mimeco.enterocyte_crossfed_metabolites(model = model1, medium = Western_diet, undescribed_metabolites_constraint = "as_is", 
-                                                                solver = "cplex", model_biomass_id = model1_biomass_id, namespace = "BIGG", 
-                                                                plot = True, sample_size = 1000)
+  potential_crossfeeding = mimeco.analysis.enterocyte_crossfed_metabolites(model = model1, medium = Western_diet, undescribed_metabolites_constraint = "as_is", 
+                                                                solver = "gurobi", model_biomass_id = model1_biomass_id, namespace = "BIGG", 
+                                                                plot = False, sample_size = 1000)
+
