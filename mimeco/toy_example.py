@@ -40,11 +40,11 @@ int_score, int_type = analysis.interaction_score_and_type(model1, model2, Wester
 model1_biomass_id = "Growth"
 model2_biomass_id = "Growth"
 
-potential_exchange, data = analysis.crossfed_metabolites_plotdata(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
+potential_exchange, data = analysis.crossfed_metabolites(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
                                solver = "cplex", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id, plot = True, retrieve_data = "selection")
 
 
-potential_exchange2, data2 = analysis.crossfed_metabolites_plotdata(model1 = model2, model2 = model1, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
+potential_exchange2, data2 = analysis.crossfed_metabolites(model1 = model2, model2 = model1, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
                                solver = "cplex", model1_biomass_id = model2_biomass_id, model2_biomass_id = model1_biomass_id, plot=True, retrieve_data = "all")
 #with enterocyte
 start_time = time.time()

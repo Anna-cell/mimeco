@@ -17,7 +17,7 @@ import cobra
 from importlib.resources import files
 
 
-def interaction_score_and_type(model1, model2, medium, undescribed_metabolites_constraint, plot = False):
+def interaction_score_and_type(model1, model2, medium = None, undescribed_metabolites_constraint = None, undescribed_met_lb = -1, plot = False):
     """
     A function that, given 2 models in the same namespace and a defined medium, analyses the interaction between the two models,
     infering qualitative (interaction_type) and quantitative (interaction_score) information on their metabolic interaction. 
@@ -28,13 +28,14 @@ def interaction_score_and_type(model1, model2, medium, undescribed_metabolites_c
     model2 : cobra.Model
     medium : pandas series
         Index : metabolites names
-        values  : Availability of corresponding metabolite in the medium as a positive flux value. 
+        values  : Availability of corresponding metabolite in the medium as a positive flux value.
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         "as_is" : Their availability is the same as in the original inputted model. 
-
+    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+        Default is -1
     Returns
     -------
     interaction_score : float
@@ -45,14 +46,18 @@ def interaction_score_and_type(model1, model2, medium, undescribed_metabolites_c
     interaction_type : string
         Qualitative description of the interaction.
     """
-
+    if medium is None:
+        warnings.warn("You have not specified a medium composition. The model's bounds will be constrained based on the inputted model's exchange constraints")
+    elif undescribed_metabolites_constraint == None:
+        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of -1 will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
+        undescribed_metabolites_constraint = "partially_constrained"
     metabolic_dict = utils.create_ecosystem_metabolic_dict(model1, model2)
-    #Infers maximal objective value of both models seperately, in the given mdeium.
+        #Infers maximal objective value of both models seperately, in the given medium.
     with model1:
-        model1, constrained_medium_dict1 = utils.restrain_medium(model1, medium, undescribed_metabolites_constraint)
+        model1, constrained_medium_dict1 = utils.restrain_medium(model1, medium, undescribed_metabolites_constraint, undescribed_met_lb)
         solo_growth_model1 = model1.optimize().objective_value
     with model2:
-        model2, constrained_medium_dict2 = utils.restrain_medium(model2, medium, undescribed_metabolites_constraint)
+        model2, constrained_medium_dict2 = utils.restrain_medium(model2, medium, undescribed_metabolites_constraint, undescribed_met_lb)
         solo_growth_model2 = model2.optimize().objective_value
     if solo_growth_model1 == solo_growth_model2 == 0:
         raise RuntimeError("Both models had a null objective value when modeled alone in the given medium."+
@@ -230,7 +235,7 @@ def enterocyte_interaction_score_and_type(model, medium, undescribed_metabolites
         host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_BiGG.xml'))
     elif namespace == "AGORA":
         host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_VMH_v3.xml'))
-    host.solver = "solver"
+    host.solver = solver
     host.objective = host.reactions.get_by_id('biomass_reactionIEC01b')
     metabolic_dict = utils.create_ecosystem_metabolic_dict(host, model)
     #Restrain enterocyte exchanges with the blood compartment.

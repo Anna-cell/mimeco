@@ -42,7 +42,7 @@ def create_ecosystem_metabolic_dict(model1, model2):
     metabolic_dict = {x:x[0] for x in all_metabolites}
     return metabolic_dict
 
-def restrain_medium(model, medium, undescribed_metabolites_constraint):
+def restrain_medium(model, medium, undescribed_metabolites_constraint, undescribed_met_lb):
     """
     Builds the dictionnary used for constraining the medium of the ecosystem model based on inputted medium data.
 
@@ -51,11 +51,13 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint):
     model : cobra.Model
     medium : pandas series
         Index : metabolites names
-        values  : Availability of corresponding metabolite in the medium as a positive flux value. 
+        values  : Availability of corresponding metabolite in the medium as a positive flux value.
     undescribed_metabolites_constraint : string ("blocked" or "partially_constrained"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+        Default is -1
 
     Returns
     -------
@@ -69,15 +71,17 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint):
     for reac in model.exchanges:
         old_bounds = reac.bounds
         met_ex, suffixe = no_compartment_id(list(reac.metabolites.keys())[0].id)
-        if met_ex in list(medium.index):
-            constrained_medium_dict[met_ex+suffixe] = (-medium.loc[met_ex][0], reac._upper_bound)
-            reac.lower_bound = -medium.loc[met_ex][0]
+        if medium == None:
+            constrained_medium_dict[met_ex+suffixe] = old_bounds
+        elif met_ex in list(medium.index):
+            constrained_medium_dict[met_ex+suffixe] = (-medium.loc[met_ex].iloc[0], reac._upper_bound)
+            reac.lower_bound = -medium.loc[met_ex].iloc[0]
         elif undescribed_metabolites_constraint == "blocked":
             constrained_medium_dict[met_ex+suffixe] = (0, reac._upper_bound)
             reac.lower_bound = 0
-        elif undescribed_metabolites_constraint == "partially_constrained" and old_bounds[0] < -1:
-            constrained_medium_dict[met_ex+suffixe] = (-1, reac._upper_bound)
-            reac.lower_bound = -1
+        elif undescribed_metabolites_constraint == "partially_constrained" and old_bounds[0] < undescribed_met_lb:
+            constrained_medium_dict[met_ex+suffixe] = (undescribed_met_lb, reac._upper_bound)
+            reac.lower_bound = undescribed_met_lb
         elif undescribed_metabolites_constraint == "as_is":
             constrained_medium_dict[met_ex+suffixe] = (reac.lower_bound, reac._upper_bound)
     if constrained_medium_dict == {}:
