@@ -1,10 +1,8 @@
 Global usage
 ============
 
-MIMEco infers the interaction potential between two organisms using
-multi-objective metabolic modelling. This requires the user to input
-their genome-scale metabolic models (GEMs), and a specific medium is
-highly recommended to model relevant interactions. Here, we will explore
+MIMEco infers the interaction potential between two organisms using multi-objective metabolic modelling. This requires the user to input
+their genome-scale metabolic models (GEMs), and a specific medium is highly recommended to model relevant interactions. Here, we will explore
 an example for a global usage of MIMEco.
 
 Models and medium definition
@@ -163,29 +161,22 @@ appearance of 163 metabolites in the external medium of the model. For B
 adolescentis, we have 119 exchange reactions. However, our Western diet
 only defines the appearance flux of 90 metabolites. All of the exchange
 metabolites present in the models, but not defined by the medium are
-“undescribed metabolites”
+“undescribed metabolites”.
 
-the **``undescribed_metabolites_constraint``** argument enables to chose
+The `undescribed_metabolites_constraint` argument enables to chose
 the level of constraint applied to these metabolites, among the
-following options: - **``"blocked"``**: All undefined metabolites lower
-bounds are set to 0, blocking their appearance in the medium. This is
-the ideal option, as it only allow the bacteria to grow and interact on
-your designed medium. - **``"partially_constrained"``**: It can be
-tricky to define a medium that enables both organisms to grow in
-``blocked`` conditions. Often, slightly unconstraining the undescribed
-metabolites appearance can help while still yielding medium-dependant
-results. This options allow a non-zero lower bound for undescribed
-metabolites. It is set as “-1” by default, but this lower_bound value
-can be personnalized through the option
-``undescribed_met_lb  - **``\ “as_is”\`**: In this case, the lower bound
-of undescribed metabolites exchange reactions stays the same as in the
-inputted model. This is usually highly unconstrained.
+following options:
+ 
+ - ``"blocked"``: All undefined metabolites lower bounds are set to 0, blocking their appearance in the medium. This is the ideal option, as it only allow the bacteria to grow and interact on your designed medium.
 
+ - ``"partially_constrained"``: It can be tricky to define a medium that enables both organisms to grow in ``blocked`` conditions. Often, slightly unconstraining the undescribed metabolites appearance can help while still yielding medium-dependant results. This options allow a non-zero lower bound for undescribed metabolites. It is set as “-1” by default, but this lower_bound value can be personnalized through the option ``undescribed_met_lb`` 
+
+ - ``“as_is”``: In this case, the lower bound of undescribed metabolites exchange reactions stays the same as in the inputted model. This is usually highly unconstrained.
 Metabolic interaction inference
 -------------------------------
 
 Let’s infer the interaction score and type between *L. rhamnosus* and
-*B. adolescentis* with the function **``interaction_score_and_type()``**
+*B. adolescentis* with the function ``interaction_score_and_type()``
 
 .. code:: ipython3
 
@@ -243,13 +234,13 @@ are exchanged between the organisms, and whose exchanges are correlated
 with model2’s objective value. In other words, it infers the metabolic
 exchanges impacting model2’s growth in ecosystem. This analysis requires
 more data from the user, and is more time consuming. This function also
-takes **``model1``**, **``model2``**, **``medium``** and
-**``undescribed_metabolites_constraint``** as arguments. It also needs:
-- **``solver``**: precise the solver you are using. -
-**``model1_biomass_id``**: id of the reaction used as objective in
+takes ``model1``, ``model2``, ``medium`` and
+``undescribed_metabolites_constraint`` as arguments. It also needs:
+- ``solver``: precise the solver you are using. -
+``model1_biomass_id``: id of the reaction used as objective in
 model1 (if the objective coefficient is not null for several reactions,
 then a new reaction must be built to constrain the model to a given
-objective value through its flux) - **``model2_biomass_id``**
+objective value through its flux) - ``model2_biomass_id``
 
 The function identifies crossfed metabolites. These are metabolites that
 are secreted by one organism and uptaken by the other in a given
@@ -276,15 +267,6 @@ organisms, and this exchange impacts model2’s fitness.
     (0, 1261)
     (1, 2285)
     /tmp/tmpotd0tq9f
-
-
-.. parsed-literal::
-
-    /home/anna/.local/lib/python3.10/site-packages/cobra/util/solver.py:554: UserWarning: Solver status is 'infeasible'.
-      warn(f"Solver status is '{status}'.", UserWarning)
-
-
-
 
 .. parsed-literal::
 
@@ -396,21 +378,19 @@ phenotypes on the Pareto front. By default, 1000 metabolic phenotypes
 aresampled, but it can be changed using the optional argument
 **``sample_size``**.
 
-The selection of crossfed metabolites (CM) can be personnalized. The
-exact criteria, and their modulable options are:
+The selection of crossfed metabolites (CM) can be personnalized. The exact criteria, and their modulable options are:
 
--  the fluxes of the CM transport reactions for the two organisms are
-   anti-correlated.
+-  The fluxes of the CM transport reactions for the two organisms are anti-correlated.
 
    By default, the anti-correlation must be superior or equal to 0.5.
    This can be changed using the optionnal argument
-   **``exchange_correlation``**.
+   ``exchange_correlation``.
 
 -  The fluxes of the CM transport reactions for the two organisms are
    correlated with model2 biomass production.
 
    By default, a minimal correlation value is set to 0.8. This can be
-   changed using the optional argument **``biomass_correlation``**.
+   changed using the optional argument ``biomass_correlation``.
 
 -  The reactions yield opposite sign for a given proportion of
    solutions.
@@ -418,32 +398,10 @@ exact criteria, and their modulable options are:
    By default, the minimal proportion of metabolic phenotypes where
    transport reactions yield opposite sign is set to 0.3. This can be
    changed using the optionnal argument
-   **``lower_exchange_proportion``**.
+   ``lower_exchange_proportion``.
 
 Let’s to see if the results change when largely unconstraining these
 parameters:
-
-.. code:: ipython3
-
-    potential_exchange2 = analysis.crossfed_metabolites(model1 = model2, model2 = model1, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
-                                                        solver = "gurobi", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id, 
-                                                        exchange_correlation = 0.3, biomass_correlation = 0.6, lower_exchange_proportion = 0.1)
-    potential_exchange2
-
-
-.. parsed-literal::
-
-    nb of bounds modified by medium :  185
-    (0, 1022)
-    (1, 2285)
-    /tmp/tmp0ba3c0c8
-
-
-.. parsed-literal::
-
-    /home/anna/.local/lib/python3.10/site-packages/cobra/util/solver.py:554: UserWarning: Solver status is 'infeasible'.
-      warn(f"Solver status is '{status}'.", UserWarning)
-
 
 .. code:: ipython3
 
@@ -459,12 +417,6 @@ parameters:
     (0, 1022)
     (1, 2285)
     /tmp/tmpts0_4wlj
-
-
-.. parsed-literal::
-
-    /home/anna/.local/lib/python3.10/site-packages/cobra/util/solver.py:554: UserWarning: Solver status is 'infeasible'.
-      warn(f"Solver status is '{status}'.", UserWarning)
 
 
 
