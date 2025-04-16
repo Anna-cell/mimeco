@@ -132,7 +132,9 @@ def mo_fba(model1, model2, metabolic_dict, constrained_medium_dict):
     ecosys = create_model(model_array=[model1, model2], metabolic_dict=metabolic_dict, medium = constrained_medium_dict)
     bensolve_opts = bensolve_default_options()
     bensolve_opts['message_level'] = 0
-    sol_mofba = mocbapy.analysis.mo_fba(ecosys, options=bensolve_opts)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        sol_mofba = mocbapy.analysis.mo_fba(ecosys, options=bensolve_opts)
     return sol_mofba, ecosys
 
 def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
@@ -440,7 +442,7 @@ def reac_to_met_id(reac, model_id):
     met = met.replace("EX_", "")
     return met
     
-def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_biomass_id, exchange_correlation = 0.5, biomass_correlation = 0.8):
+def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_biomass_id, exchange_correlation = 0.5, biomass_correlation = 0.8, lower_exchange_proportion = 0.3):
     """
     Infers metabolites that are exchanged between organisms in the ecosystem models, correlated with an increasing model1 objective value.
     In other words, crossfed metabolite benefitting model1. Correlation options can be customized. Spearman correlation is used.
@@ -464,7 +466,8 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
         default is 0.5
     biomass_correlation : float between 0 and 1
         correlation between the exchange of the metabolite and the biomass production of model2 for its selection as crossfed.
-
+    lower_exchange_proportion : float between 0 and 1
+        proportion of the sampling solutions in which the metabolite of interest is secreted by one organism and uptaken by the other.
     Returns
     -------
     potential_crossfeeding : dictionnary
@@ -483,23 +486,26 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
         if ecosys_reac_id_model1 in correlation_reactions.index and ecosys_reac_id_model2 in correlation_reactions.index:
             #if both exchange reactions have at least one non-null flux value among all samples.
             #and if both reactions are inversely correlated (fluxes variation are going opposite ways, one toward secretion, the other toward uptake)
-            if sum(sampling[ecosys_reac_id_model1])!=0 and sum(sampling[ecosys_reac_id_model2])!=0 and correlation_reactions.loc[ecosys_reac_id_model1, ecosys_reac_id_model2] <= -exchange_correlation:
+            if (sum(sampling[ecosys_reac_id_model1])!=0 and sum(sampling[ecosys_reac_id_model2])!=0 and 
+                    correlation_reactions.loc[ecosys_reac_id_model1, ecosys_reac_id_model2] <= -exchange_correlation):
                 # If the uptake / secretion of given metabolite in model1, associated with its secretion / uptake in model2, is correlated with increased model2 objective value
-                if correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id] > biomass_correlation:
+                if abs(correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id]) > biomass_correlation:
                     exchange = 0
                     model1_to_model2 = 0
                     model2_to_model1 = 0
                     for s in sampling.index: #parse all solutions for metabolite of interest
                         # if metabolite is secreted in one model, and uptaken in the other
-                        if oppositeSigns(sampling.loc[s, ecosys_reac_id_model1], sampling.loc[s, ecosys_reac_id_model2]) :
+                        if (round(sampling.loc[s, ecosys_reac_id_model1], 5) != 0 and
+                        	round(sampling.loc[s, ecosys_reac_id_model2], 5) != 0 and
+                        	oppositeSigns(sampling.loc[s, ecosys_reac_id_model1], sampling.loc[s, ecosys_reac_id_model2])): 
                             exchange = exchange+1
-                            if sampling.loc[s, ecosys_reac_id_model1] <0 :
+                            if sampling.loc[s, ecosys_reac_id_model1] > 0 :
                                 model1_to_model2 = model1_to_model2 + 1
-                            elif sampling.loc[s, ecosys_reac_id_model2]<0:
+                            elif sampling.loc[s, ecosys_reac_id_model2] > 0:
                                 model2_to_model1 = model2_to_model1 + 1
-                    if exchange >10 and met_id not in potential_crossfeeding.keys():
-                        #change results to proportions
-                        proportion_exchange = exchange/len(sampling)
+                    proportion_exchange = exchange/len(sampling)
+                    if proportion_exchange > lower_exchange_proportion and met_id not in potential_crossfeeding.keys():
+                        #exchange results to proportions
                         proportion_model1_to_model2 = model1_to_model2/len(sampling)
                         proportion_model2_to_model1 = model2_to_model1/len(sampling)
                         potential_crossfeeding[met_id] = [proportion_exchange, proportion_model1_to_model2, proportion_model2_to_model1]

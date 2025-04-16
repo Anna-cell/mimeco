@@ -15,5 +15,5 @@ Contents
 
    Home <self>
    installation
-   global_usage
+   notebooks/Global_usage
    enterocyte_specific_analysis
