@@ -17,7 +17,7 @@ easy import of models of sbml, json, yaml, matlab and pickle formats.
 In this example, we import two gut bacteria models: *Lactobacillus
 rhamnosus* and *Bifidobacterium adolescentis*
 
-.. code:: ipython3
+.. code:: ipython
 
     import cobra
     
@@ -38,7 +38,7 @@ rhamnosus* and *Bifidobacterium adolescentis*
 It is better to immediatly change the model’s solvers from glpk to a
 better one (gurobi, CPLEX or SCIP)
 
-.. code:: ipython3
+.. code:: ipython
 
     model1.solver = "gurobi"
     model2.solver = "gurobi"
@@ -52,7 +52,7 @@ is the availability of corresponding metabolite in the medium as a
 positive flux value (float). Here, the medium represenst a western diet,
 corresponding to a dietary intake rich in sugars and fats
 
-.. code:: ipython3
+.. code:: ipython
 
     import pandas as pd
     Western_diet = pd.read_csv("resources/Western_diet_BiGG.csv", index_col = 0)
@@ -144,7 +144,7 @@ modify the model beforehand.
 Undescribed metabolites constraint
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code:: ipython3
+.. code:: ipython
 
     print(len(model1.exchanges))
     print(len(model2.exchanges))
@@ -172,13 +172,14 @@ following options:
  - ``"partially_constrained"``: It can be tricky to define a medium that enables both organisms to grow in ``blocked`` conditions. Often, slightly unconstraining the undescribed metabolites appearance can help while still yielding medium-dependant results. This options allow a non-zero lower bound for undescribed metabolites. It is set as “-1” by default, but this lower_bound value can be personnalized through the option ``undescribed_met_lb`` 
 
  - ``“as_is”``: In this case, the lower bound of undescribed metabolites exchange reactions stays the same as in the inputted model. This is usually highly unconstrained.
+
+
 Metabolic interaction inference
 -------------------------------
 
-Let’s infer the interaction score and type between *L. rhamnosus* and
-*B. adolescentis* with the function ``interaction_score_and_type()``
+Let’s infer the interaction score and type between *L. rhamnosus* and *B. adolescentis* with the function ``interaction_score_and_type()``
 
-.. code:: ipython3
+.. code:: ipython
 
     from mimeco import analysis
     
@@ -203,7 +204,7 @@ beneficial to L. rhamnosus’s (model1) growth in a pairwise ecosystem
 exposed to a Western diet. To better understand this result, it is
 possible to plot the Pareto front with the argument ``plot  = True``:
 
-.. code:: ipython3
+.. code:: ipython
 
     int_score, int_type = analysis.interaction_score_and_type(model1, model2, Western_diet, 
                                                               undescribed_metabolites_constraint="partially constrained", 
@@ -250,7 +251,7 @@ are correlated with the biomass objective value.
 In a nutshell, these are metablites that are exchanged between
 organisms, and this exchange impacts model2’s fitness.
 
-.. code:: ipython3
+.. code:: ipython
 
     model1_biomass_id = "Growth"
     model2_biomass_id = "Growth"
@@ -290,7 +291,7 @@ front, and this exchange goes from L. rhamnosus to B. adolescentis.
 To better explore the evolution of these crossfed metabolites transport
 along the Pareto front, a plotting function is included as on option:
 
-.. code:: ipython3
+.. code:: ipython
 
     potential_exchange = analysis.crossfed_metabolites(model1 = model1, model2 = model2, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
                                    solver = "gurobi", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id, plot = True)
@@ -333,7 +334,7 @@ Now, this analysis identifies crossfed metabolites associated with the
 fitness of model2. Let’s repeat the process by exchanging model1 and
 model2 in the arguments of the function:
 
-.. code:: ipython3
+.. code:: ipython
 
     potential_exchange2 = analysis.crossfed_metabolites(model1 = model2, model2 = model1, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
                                    solver = "gurobi", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id, plot = True)
@@ -403,7 +404,7 @@ The selection of crossfed metabolites (CM) can be personnalized. The exact crite
 Let’s to see if the results change when largely unconstraining these
 parameters:
 
-.. code:: ipython3
+.. code:: ipython
 
     potential_exchange2 = analysis.crossfed_metabolites(model1 = model2, model2 = model1, medium = Western_diet, undescribed_metabolites_constraint = "partially_constrained",
                                                         solver = "gurobi", model1_biomass_id = model1_biomass_id, model2_biomass_id = model2_biomass_id, 
