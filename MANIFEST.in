@@ -1,3 +1,4 @@
 include README.rst LICENSE.md
 graft mimeco
-graft tests
+
+exclude mimeco.toy_example.py
