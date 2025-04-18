@@ -27,15 +27,6 @@ rhamnosus* and *Bifidobacterium adolescentis*
     model2 = cobra.io.read_sbml_model("resources/models/Bifidobacterium_adolescentis_ATCC_15703.xml")
     model2.id = "B_adolescentis"
 
-
-.. parsed-literal::
-
-    Set parameter WLSAccessID
-    Set parameter WLSSecret
-    Set parameter LicenseID to value 2640067
-    Academic license 2640067 - for non-commercial use only - registered to an___@ls2n.fr
-
-
 It is better to immediatly change the model’s solvers from glpk to a
 better one (gurobi, CPLEX or SCIP)
 

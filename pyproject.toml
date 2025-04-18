@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mimeco"
-version = "0.1.13"
+version = "0.1.14"
 authors = [
     {name = "Anna LAMBERT", email = "anna.lambert@univ-nantes.fr"},
 ]
@@ -16,9 +16,11 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: OS Independent",
 ]
+requires-python = ">=3.12"
 dependencies = [
     "pandas",
     "cobra",
     "scikit-learn",
-    "mocbapy"
+    "mocbapy",
+    "matplotlib"
 ]
