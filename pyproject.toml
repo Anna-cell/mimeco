@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mimeco"
-version = "0.1.12"
+version = "0.1.13"
 authors = [
     {name = "Anna LAMBERT", email = "anna.lambert@univ-nantes.fr"},
 ]

@@ -11,7 +11,8 @@ Dependancies
 **GLPK**:
 MIMEco depends on benpy, which needs glpk to function. Its installation is clearly described in `benpy's pyPI page <https://pypi.org/project/benpy/#annex-installing-glpk>`_
 
-**Gurobi**:
+**Efficient solver**:
+To infer reliable results, it is important to have an efficient solver, such as gurobi or CPLEX.
 While an unlicensed version of gurobi exits on pyPI and conda, it is limited to small models and won't work with typical metabolic models.
 Gurobi at its full capacity is free for academics, but necesitates to create an account to retrieve a license. 
 

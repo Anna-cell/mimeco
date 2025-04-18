@@ -20,6 +20,10 @@ For detailed documentation, please go to `readthedocs : mimeco <https://mimeco.r
 Dependancies
 ~~~~~~~~~~~~~
 
+**GLPK**:
+MIMEco depends on benpy, which needs glpk to function. Its installation is clearly described in `benpy's pyPI page <https://pypi.org/project/benpy/#annex-installing-glpk>`_
+
+**Efficient solver**
 To use MIMEco, you will need to download a solver, preferably CPLEX or gurobi. Both are free for academics, but require to get a license to be used at full capacity.
 A tutorial on how to make gurobi work with mimeco is written in the `documentation <https://mimeco.readthedocs.io/en/latest/installation.html#installing-gurobi>`_
 
