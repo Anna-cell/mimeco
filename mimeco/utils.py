@@ -14,6 +14,7 @@ from mocbapy.EcosystemModel import create_model, bensolve_default_options
 import mocbapy.analysis
 import math
 import matplotlib.pyplot as plt
+import warnings
 
 
 def create_ecosystem_metabolic_dict(model1, model2):

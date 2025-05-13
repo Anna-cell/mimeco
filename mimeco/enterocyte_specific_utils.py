@@ -16,7 +16,7 @@ blood_reactions = blood_reactions["blood_exchanges"].tolist()
 #!! blood exchange reaction in the other way as lumen, and general convention. 
 
 
-def restrain_blood_exchange_enterocyte(model, namespace, medium_blood = "AAD"):
+def restrain_blood_exchange_enterocyte(model, medium_blood = "AAD"):
     """
     Restrains exchanges with the blood compartment for the enterocyte. 
     Default constraint : Average American diet (AAD) from https://doi.org/10.1093/hmg/ddt119
@@ -27,8 +27,8 @@ def restrain_blood_exchange_enterocyte(model, namespace, medium_blood = "AAD"):
     model : cobra.Model
         should be small intestinal epithelial cell adapted from https://doi.org/10.1093/hmg/ddt119
     namespace : string
-        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
-        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
+        "bigg" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
+        "agora" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
     medium_blood : pandas.DataFrame, optional
         A pandas.DataFrame defining blood exchange constraints for the enterocyte
         Index : Exchanged metabolites with the blood (except default AAD where it is exchange reactions)
@@ -42,12 +42,15 @@ def restrain_blood_exchange_enterocyte(model, namespace, medium_blood = "AAD"):
     model : cobra.Model
         sIEC with blood exchanges constrained
     """
-    if namespace == "BIGG":
+    namespace, suffixe = utils.find_namespace(model)
+    if namespace == "bigg":
         AAD_medium_blood = pd.read_csv(files("mimeco.resources").joinpath("AAD_BiGG.tsv"), sep="\t", index_col = 0)
         #blood_suffixe = "(e)"
-    elif namespace == "AGORA":
+    elif namespace == "agora":
         AAD_medium_blood = pd.read_csv(files("mimeco.resources").joinpath("AAD_VMH.tsv"), sep="\t", index_col = 0)
         #blood_suffixe = "_b"
+    else:
+        raise RuntimeError("The inputted metabolic model's namespace is not compatible with the host model. You must use a model writen in bigg or agora namespace.")
     #Constrain exchanges with blood compartment
     if isinstance(medium_blood, str):
         if medium_blood == "AAD": #default medium AAD

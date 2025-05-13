@@ -368,7 +368,7 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     else:
         raise RuntimeError("The inputted metabolic model's namespace is not compatible with the host model. You must use a model writen in bigg or agora namespace.")
 
-            host.solver = solver
+    host.solver = solver
     host.objective = host.reactions.get_by_id('biomass_reactionIEC01b')
     host_biomass_id = 'biomass_reactionIEC01b'
     metabolic_dict = utils.create_ecosystem_metabolic_dict(host, model)
