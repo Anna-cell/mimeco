@@ -42,7 +42,7 @@ def create_ecosystem_metabolic_dict(model1, model2):
     metabolic_dict = {x:x[0] for x in all_metabolites}
     return metabolic_dict
 
-def restrain_medium(model, medium, undescribed_metabolites_constraint, undescribed_met_lb):
+def restrain_medium(model, medium, undescribed_metabolites_constraint, undescribed_met_lb = -0.1):
     """
     Builds the dictionnary used for constraining the medium of the ecosystem model based on inputted medium data.
 
@@ -57,7 +57,7 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint, undescrib
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
     undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
-        Default is -1
+        Default is -0.1
 
     Returns
     -------
@@ -71,7 +71,7 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint, undescrib
     for reac in model.exchanges:
         old_bounds = reac.bounds
         met_ex, suffixe = no_compartment_id(list(reac.metabolites.keys())[0].id)
-        if medium == None:
+        if medium is None:
             constrained_medium_dict[met_ex+suffixe] = old_bounds
         elif met_ex in list(medium.index):
             constrained_medium_dict[met_ex+suffixe] = (-medium.loc[met_ex].iloc[0], reac._upper_bound)
@@ -79,7 +79,7 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint, undescrib
         elif undescribed_metabolites_constraint == "blocked":
             constrained_medium_dict[met_ex+suffixe] = (0, reac._upper_bound)
             reac.lower_bound = 0
-        elif undescribed_metabolites_constraint == "partially_constrained" and old_bounds[0] < undescribed_met_lb:
+        elif undescribed_metabolites_constraint == "partially_constrained":
             constrained_medium_dict[met_ex+suffixe] = (undescribed_met_lb, reac._upper_bound)
             reac.lower_bound = undescribed_met_lb
         elif undescribed_metabolites_constraint == "as_is":
@@ -274,7 +274,8 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
     interaction_type_translation = {"-000":"competition", "=000": "neutrality", 
                                     "100":"favors model1", "010":"favors model2",
                                     "110":"limited mutualism", "111":"mutualism",
-                                    "011" : "Favors model2", "101" : "favors model1"}
+                                    "011" : "Favors model2", "101" : "favors model1",
+                                    "001": "neutralism"}
     interaction_type = interaction_type_translation[interaction_type_code]
     return interaction_type
 
@@ -439,6 +440,7 @@ def reac_to_met_id(reac, model_id):
     """
     met = reac.replace("_e:"+model_id, "") #BiGG namespace
     met = met.replace("(e):"+model_id, "") #Agora namespace
+    met = met.replace("_e0:"+model_id, "") #gapseq namespace
     met = met.replace("EX_", "")
     return met
     
@@ -512,7 +514,7 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
     else:
         return potential_crossfeeding
 
-def extract_sampling_data(sampling, potential_crossfeeding, model1_id, model2_id, namespace = "BIGG"):
+def extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, model2_id):
     """
     Extracts sampling data from predicted exchanged metabolites, and models objective values for each sample.
 
@@ -530,10 +532,6 @@ def extract_sampling_data(sampling, potential_crossfeeding, model1_id, model2_id
         Model denomination in the cobra.Model of model1
     model2_id : string
         Model denomination in the cobra.Model of model1
-    namespace : string, optionnal
-        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
-        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
-        default is "BIGG"
 
     Returns
     -------
@@ -545,10 +543,7 @@ def extract_sampling_data(sampling, potential_crossfeeding, model1_id, model2_id
 
     obj_value_model1 = []
     obj_value_model2 = []
-    if namespace == "BIGG":
-        suffixe = "_e"
-    elif namespace == "AGORA":
-        suffixe = "(e)"
+    namespace, suffixe = find_namespace(model1)
     for i in sampling.index:      
         obj_value_model1.append(float(i.split("_", 1)[0]))
         obj_value_model2.append(float(i.split("_", 1)[1]))
@@ -562,7 +557,7 @@ def extract_sampling_data(sampling, potential_crossfeeding, model1_id, model2_id
     return sampling_data
 
 
-def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id, namespace = "BIGG"):
+def plot_exchange(model1, sampling, potential_crossfeeding, model1_id, model2_id):
     """
     Visualize crossfed metablites flux evlution on along the pareto front. This visualisation is rudimentary.
     To create better and personnalized figures, use "mimeco.crossfed_metabolites_plotdata" which returns data relevant to the
@@ -582,18 +577,11 @@ def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id, namesp
         Model denomination in the cobra.Model of model1
     model2_id : string
         Model denomination in the cobra.Model of model1
-    namespace : string, optionnal
-        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
-        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
-        default is "BIGG"
     """
 
     max_model1 = 0
     max_model2 = 0
-    if namespace == "BIGG":
-        suffixe = "_e"
-    elif namespace == "AGORA":
-        suffixe = "(e)"
+    namespace, suffixe = find_namespace(model1)
     for i in sampling.index:      
         obj_value_model1 = float(i.split("_", 1)[0])
         obj_value_model2 = float(i.split("_", 1)[1])  
@@ -626,7 +614,7 @@ def plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id, namesp
     
 def no_compartment_id(metabolite):
     """
-    Separates metabolic id from the compartment information. Aknowledges BiGG and AGORA namespaces.
+    Separates metabolic id from the compartment information. Aknowledges BiGG, AGORA and gapseq namespaces.
 
     Parameters
     ----------
@@ -642,7 +630,7 @@ def no_compartment_id(metabolite):
     
     a = metabolite
     done = False
-    if metabolite[-2:] == "_e":
+    if metabolite[-2:] == "_e": #to avoid deleting _e in the middle of a metabolite id
         metabolite = metabolite.replace('_e','')
         if metabolite != a:
             suffixe='_e'
@@ -650,6 +638,14 @@ def no_compartment_id(metabolite):
     metabolite = metabolite.replace(('(e)'),'')
     if metabolite != a and not done:
         suffixe='(e)'
+        done = True
+    metabolite = metabolite.replace(('_e0'),'')
+    if metabolite != a and not done:
+        suffixe='_e0'
+        done = True
+    metabolite = metabolite.replace(('_c0'),'')
+    if metabolite != a and not done:
+        suffixe='_c0'
         done = True
     metabolite = metabolite.replace(('_c'),'')
     if metabolite != a and not done:
@@ -703,3 +699,22 @@ def no_compartment_id(metabolite):
         print("no suffixe found for", metabolite)
         suffixe = ""
     return metabolite, suffixe
+
+    def find_namespace(model):
+        suffixe_list = []
+        for ex_reac in e_coli.exchanges[0:3]: #check 3 suffixes to be sure
+            met = list(ex_reac.metabolites.keys())[0].id
+            met_id, suffixe = mimeco.utils.no_compartment_id(met)
+            suffixe_list.append(suffixe)
+        if len(list(set(suffixe_list))) == 1: #If the suffixe is the same for the three checked exchange reactions
+            suffixe = list(set(suffixe_list))
+        if suffixe == "_e":
+            namespace = "bigg"
+        elif suffixe == "(e)":
+            namespace = "agora"
+        elif suffixe == "_e0":
+            namespace = "gapseq"
+        else:
+            namespace = "unkown"
+            warning.warn(f"mimeco could not identify the model's namespace. You need to instruct the suffixe for exchange reactions in the 'suffixe' argument of the reaction.")
+        return namespace, suffixe

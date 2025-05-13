@@ -445,6 +445,6 @@ both the ``potential_crossfeeding`` dictionnary and the
 ``sampling_data`` pandas dataframe. The optional argument
 \``retrieve_data can be set to:
 
- - **“all”**, where the whole sampling matrix is returned in a second variable
+ - **“all”**, where the whole sampling matrix is returned in a second variable.
 
  - **“selection”** where the a pandas dataframe of the sampling of selected crossfed metabolites transport reactions and both organisms biomass reactions is returned.

@@ -7,7 +7,7 @@ Models and medium formats
 **MIMEco** infers the interaction between two organisms in a given medium. These **two organisms** must be inputted as **cobrapy models**.
 Cobrapy allows easy import of models of sbml, json, yaml, matlab and pickle formats, as described in `their documentation  <https://cobrapy.readthedocs.io/en/latest/io.html>`_.
 
-The **medium** must be inputted in the form of a **pandas Series** where the index is the medium metabolite identifier, 
+The **medium** must be inputted in the form of a **pandas Dataframe** where the index is the medium metabolite identifier, 
 and the corresponding value is the availability of corresponding metabolite in the medium as a positive flux value (float).
 
 .. list-table:: Example of medium

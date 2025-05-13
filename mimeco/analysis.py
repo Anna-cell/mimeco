@@ -17,7 +17,7 @@ import cobra
 from importlib.resources import files
 
 
-def interaction_score_and_type(model1, model2, medium = None, undescribed_metabolites_constraint = None, undescribed_met_lb = -1, plot = False):
+def interaction_score_and_type(model1, model2, medium = None, undescribed_metabolites_constraint = None, undescribed_met_lb = -0.1, plot = False, verbose=False):
     """
     A function that, given 2 models in the same namespace and a defined medium, analyses the interaction between the two models,
     infering qualitative (interaction_type) and quantitative (interaction_score) information on their metabolic interaction. 
@@ -35,7 +35,7 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         "as_is" : Their availability is the same as in the original inputted model. 
     undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
-        Default is -1
+        Default is -0.1
     Returns
     -------
     interaction_score : float
@@ -77,6 +77,11 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
     xy, maxi_model1, maxi_model2 = utils.pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2) #parse and normalize pareto front
     interaction_score = utils.infer_interaction_score(xy) #measure AUC of Pareto front, translates it in quantitative interaction prediction
     interaction_type = utils.infer_interaction_type(interaction_score, maxi_model1, maxi_model2,solo_growth_model1, solo_growth_model2) #infers interaction type from pareto front's shape.
+    if verbose:
+        print(model1.id+" solo maximal growth is: "+str(solo_growth_model1))
+        print("its maximal growth in ecosystem is: "+str(maxi_model1[0]))
+        print(model2.id+" solo maximal growth is: "+str(solo_growth_model2))
+        print("its maximal growth in ecosystem is: "+str(maxi_model2[1]))
     if plot:
         model1_id = model1.id
         model2_id = model2.id
@@ -85,7 +90,7 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
 
 
 def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_biomass_id, medium = None, undescribed_metabolites_constraint = None, 
-                        undescribed_met_lb = -1, sample_size = 1000, exchange_correlation = 0.5, biomass_correlation = 0.8, lower_exchange_proportion = 0.3,
+                        undescribed_met_lb = -0.1, sample_size = 1000, exchange_correlation = 0.5, biomass_correlation = 0.8, lower_exchange_proportion = 0.3,
                         plot = False, retrieve_data = "no"):
     """
     A function that, given 2 models in the same namespace and a defined medium, predicts metabolic exchanges that
@@ -104,6 +109,8 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         "as_is" : Their availability is the same as in the original inputted model. 
+    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+        Default is -0.1
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     model1_biomass_id : string
@@ -131,7 +138,7 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
         Returns data that can be used for custom analysis.
         "all" : returns the sampling dataframe containing the fluxes of each reaction of the ecosystem in all samples. 
         "selection": returns a subset of the sampling dataframe, containing the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
-    as well as the objective value of each model in these samples.
+        as well as the objective value of each model in these samples.
         If retrieve_data is set on "all" or "selection", the function returns a second variable with the corresponding dataframe. 
         default is "no"
 
@@ -190,18 +197,18 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
                                                 model2_biomass_id=model2_biomass_id, exchange_correlation = exchange_correlation, 
                                                 biomass_correlation = biomass_correlation, lower_exchange_proportion = lower_exchange_proportion)
     if plot: #Visualize pareto front
-        utils.plot_exchange(sampling, potential_crossfeeding, model1_id, model2_id)
+        utils.plot_exchange(model1, sampling, potential_crossfeeding, model1_id, model2_id)
     if retrieve_data == "all":
         return potential_crossfeeding, sampling
     if retrieve_data == "selection":
-        sampling_data = utils.extract_sampling_data(sampling, potential_crossfeeding, model1_id, model2_id)
+        sampling_data = utils.extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, model2_id)
         return potential_crossfeeding, sampling_data
     else:
         return potential_crossfeeding
 
 
 def enterocyte_interaction_score_and_type(model, solver, medium = None, undescribed_metabolites_constraint = None, 
-                                          undescribed_met_lb = -1, namespace = "BIGG", plot = False):
+                                          undescribed_met_lb = -0.1, plot = False):
     """
     A function infering the interaction between a given model and a small intestinal epithelial cell (sIEC) adapted from https://doi.org/10.1093/hmg/ddt119.
     Returns qualitative (interaction_type) and quantitative (interaction_score) information on their metabolic interaction.
@@ -217,13 +224,15 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         "as_is" : Their availability is the same as in the original inputted model.
+    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+        Default is -0.1
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     model1_biomass_id : string
     namespace : string, optionnal
-        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
-        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
-        default is "BIGG"
+        "bigg" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
+        "agora" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
+        default is "bigg"
     plot : Boolean, optional
         Rudimentary integrated plot function to visualize Pareto front.
         default is False
@@ -243,10 +252,13 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
     elif undescribed_metabolites_constraint == None:
         warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of -1 will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
         undescribed_metabolites_constraint = "partially_constrained"
-    if namespace == "BIGG":
+    namespace, suffixe = utils.find_namespace(model)
+    if namespace == "bigg":
         host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_BiGG.xml'))
-    elif namespace == "AGORA":
+    elif namespace == "agora":
         host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_VMH_v3.xml'))
+    else:
+        raise RuntimeError("The inputted metabolic model's namespace is not compatible with the host model. You must use a model writen in bigg or agora namespace.")
     host.solver = solver
     host.objective = host.reactions.get_by_id('biomass_reactionIEC01b')
     metabolic_dict = utils.create_ecosystem_metabolic_dict(host, model)
@@ -271,9 +283,9 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
                       " If this is not an expected result, you might want to use the \"partially_constrained\""+
                       " option for the undescribed_metabolites_constraint argument, or redefine your medium or model.")
     medium_dict = {**constrained_medium_dict1, **constrained_medium_dict2} #Translate medium constraint for mocba
-    if namespace == "BIGG":
+    if namespace == "bigg":
         medium_dict["o2_e"] = (0, host.reactions.get_by_id("EX_o2_e").upper_bound) #O2 can only appear by enterocyte secretion.
-    elif namespace == "AGORA":
+    elif namespace == "agora":
         medium_dict["o2(e)"] = (0, host.reactions.get_by_id("EX_o2(e)").upper_bound) #O2 can only appear by enterocyte secretion.
     # mocba will create new exchange reaction exterior to both models. the original exchange reactions, if restrained, will prevent 
     #exchanges between organisms. Here we unconstrain them.
@@ -288,8 +300,8 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
         utils.pareto_plot(xy, "enterocyte", model2_id)
     return interaction_score, interaction_type
 
-def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = None, undescribed_metabolites_constraint = None, undescribed_met_lb = -1,
-                                    namespace = "BIGG", plot = False, sample_size = 1000, exchange_correlation = 0.5, biomass_correlation = 0.8, 
+def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = None, undescribed_metabolites_constraint = None, undescribed_met_lb = -0.1,
+                                    plot = False, sample_size = 1000, exchange_correlation = 0.5, biomass_correlation = 0.8, 
                                     retrieve_data = "no"):
     """
     A function that, given 2 models in the same namespace and a defined medium, predicts metabolic exchanges that
@@ -306,12 +318,10 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         "as_is" : Their availability is the same as in the original inputted model. 
+    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+        Default is -0.1
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
-    namespace : string, optionnal
-        "BIGG" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
-        "AGORA" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
-        default is "BIGG"
     exchange_correlation : float between 0 and -1
         defines the threshold for the correlation between secretion and uptake of a same metabolite by paired models for this metabolite to be considered exchanged
         default is 0.5
@@ -350,11 +360,15 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     elif undescribed_metabolites_constraint == None:
         warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of -1 will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
         undescribed_metabolites_constraint = "partially_constrained"
-    if namespace == "BIGG":
+    namespace, suffixe = find_namespace(model)
+    if namespace == "bigg":
         host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_BiGG.xml'))
-    elif namespace == "AGORA":
+    elif namespace == "agora":
         host = cobra.io.read_sbml_model(files("mimeco.resources").joinpath('enterocyte_VMH_v3.xml'))
-    host.solver = solver
+    else:
+        raise RuntimeError("The inputted metabolic model's namespace is not compatible with the host model. You must use a model writen in bigg or agora namespace.")
+
+            host.solver = solver
     host.objective = host.reactions.get_by_id('biomass_reactionIEC01b')
     host_biomass_id = 'biomass_reactionIEC01b'
     metabolic_dict = utils.create_ecosystem_metabolic_dict(host, model)
@@ -379,9 +393,9 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
                       " If this is not an expected result, you might want to use the \"partially_constrained\""+
                       " option for the undescribed_metabolites_constraint argument, or redefine your medium or model.")
     medium_dict = {**constrained_medium_dict1, **constrained_medium_dict2} #Translate medium constraint for mocba
-    if namespace == "BIGG":
+    if namespace == "bigg":
         medium_dict["o2_e"] = (0, host.reactions.get_by_id("EX_o2_e").upper_bound) #O2 can only appear by enterocyte secretion.
-    elif namespace == "AGORA":
+    elif namespace == "agora":
         medium_dict["o2(e)"] = (0, host.reactions.get_by_id("EX_o2(e)").upper_bound) #O2 can only appear by enterocyte secretion.
     # mocba will create new exchange reaction exterior to both models. the original exchange reactions, if restrained, will prevent 
     #exchanges between organisms. Here we unconstrain them.
@@ -399,7 +413,7 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
                                                 model2_biomass_id = host_biomass_id, exchange_correlation = exchange_correlation,
                                                 biomass_correlation = biomass_correlation)
     if plot: #Visualize pareto front
-        utils.plot_exchange(sampling, potential_crossfeeding, host.id, model_id, namespace = namespace)
+        utils.plot_exchange(model1, sampling, potential_crossfeeding, host.id, model_id, namespace = namespace)
     if retrieve_data == "all":
         sampling_data = sampling
         return potential_crossfeeding, sampling_data
