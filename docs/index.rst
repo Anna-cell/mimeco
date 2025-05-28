@@ -22,3 +22,5 @@ Contents
    installation
    Global_usage/Global_usage
    enterocyte_specific_analysis
+   source/mimeco.rst
+   source/modules.rst
