@@ -50,7 +50,7 @@ def restrain_blood_exchange_enterocyte(model, medium_blood = "AAD"):
         AAD_medium_blood = pd.read_csv(files("mimeco.resources").joinpath("AAD_VMH.tsv"), sep="\t", index_col = 0)
         #blood_suffixe = "_b"
     else:
-        raise RuntimeError("The inputted metabolic model's namespace ({namespace}) is not compatible with the host model. You must use a model writen in bigg or agora namespace.")
+        raise RuntimeError("The inputted metabolic model's namespace is not compatible with the host model. You must use a model writen in bigg or agora namespace.")
     #Constrain exchanges with blood compartment
     if isinstance(medium_blood, str):
         if medium_blood == "AAD": #default medium AAD

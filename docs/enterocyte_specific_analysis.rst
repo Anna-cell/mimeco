@@ -25,9 +25,6 @@ The sIEC has two external compartments : the lumen and the blood. The constraint
    - column 1 : header = "lb", lower_bound to constrain the reaction with
    - column 2 : header = "ub", upper_bound to constrain the reaction with
 
-* The optional argument ``namespace`` is set to "BIGG" by default. It can be set to "AGORA" to use the Agora / VMH namespace. 
-  /!\\ This option is still in development. the results are not reliable yet /!\\
-
 * The optional argument ``plot`` is set to "False" by default. When set to "True", the function will show a matplotlib plot of the Pareto front to ease the analysis. 
 
 .. code-block:: python

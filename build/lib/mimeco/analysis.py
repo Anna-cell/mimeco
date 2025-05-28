@@ -24,7 +24,7 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
     
     Parameters
     ----------
-    model1: cobra.Model
+    model1 : cobra.Model
     model2 : cobra.Model
     medium : pandas series
         Index : metabolites names

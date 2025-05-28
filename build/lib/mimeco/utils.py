@@ -701,21 +701,21 @@ def no_compartment_id(metabolite):
         suffixe = ""
     return metabolite, suffixe
 
-def find_namespace(model):
-    suffixe_list = []
-    for ex_reac in model.exchanges[0:3]: #check 3 suffixes to be sure
-        met = list(ex_reac.metabolites.keys())[0].id
-        met_id, suffixe = no_compartment_id(met)
-        suffixe_list.append(suffixe)
-    if len(list(set(suffixe_list))) == 1: #If the suffixe is the same for the three checked exchange reactions
-        suffixe = suffixe_list[0]
-    if suffixe == "_e":
-        namespace = "bigg"
-    elif suffixe == "(e)":
-        namespace = "agora"
-    elif suffixe == "_e0":
-        namespace = "gapseq"
-    else:
-        namespace = "unkown"
-        warnings.warn(f"mimeco could not identify the model's namespace. You need to instruct the suffixe for exchange reactions in the 'suffixe' argument of the reaction.")
-    return namespace, suffixe
+    def find_namespace(model):
+        suffixe_list = []
+        for ex_reac in e_coli.exchanges[0:3]: #check 3 suffixes to be sure
+            met = list(ex_reac.metabolites.keys())[0].id
+            met_id, suffixe = mimeco.utils.no_compartment_id(met)
+            suffixe_list.append(suffixe)
+        if len(list(set(suffixe_list))) == 1: #If the suffixe is the same for the three checked exchange reactions
+            suffixe = list(set(suffixe_list))
+        if suffixe == "_e":
+            namespace = "bigg"
+        elif suffixe == "(e)":
+            namespace = "agora"
+        elif suffixe == "_e0":
+            namespace = "gapseq"
+        else:
+            namespace = "unkown"
+            warning.warn(f"mimeco could not identify the model's namespace. You need to instruct the suffixe for exchange reactions in the 'suffixe' argument of the reaction.")
+        return namespace, suffixe

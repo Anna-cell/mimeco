@@ -1,11 +1,11 @@
 Installation
 ============
 
-MIMEco is available in pyPI::
+MIMEco is available in `pyPI <https://pypi.org/project/mimeco/>`_::
     
     pip install mimeco
 
-Dependancies 
+Dependencies 
 -------------
 
 **GLPK**:
@@ -13,7 +13,7 @@ MIMEco depends on benpy, which needs glpk to function. Its installation is clear
 
 **Efficient solver**:
 To infer reliable results, it is important to have an efficient solver, such as gurobi or CPLEX.
-While an unlicensed version of gurobi exits on pyPI and conda, it is limited to small models and won't work with typical metabolic models.
+While an unlicensed version of gurobi exists on pyPI and conda, it is limited to small models and won't work with typical metabolic models.
 Gurobi at its full capacity is free for academics, but necesitates to create an account to retrieve a license. 
 
 Installing gurobi
