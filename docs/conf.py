@@ -41,7 +41,7 @@ extensions = [
     'sphinx.ext.napoleon'
 ]
 
-autodoc_mock_imports = ['cobra', 'scikit-learn', 'benpy', 'mocbapy']
+autodoc_mock_imports = ['cobra', 'scikit-learn', 'benpy', 'mocbapy', 'mimeco', 'pandas']
 
 napoleon_google_docstring = False
 napoleon_use_param = False
