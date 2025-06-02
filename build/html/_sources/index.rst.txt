@@ -16,11 +16,12 @@ Check out the :doc:`global_usage` and :doc:`enterocyte_specific_analysis` sectio
 Contents
 ---------
 
+.. automodule:: mimeco.analysis
+    :members:
+
 .. toctree::
 
    Home <self>
    installation
    Global_usage/Global_usage
    enterocyte_specific_analysis
-   source/mimeco.rst
-   source/modules.rst
