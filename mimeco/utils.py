@@ -192,6 +192,7 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
         xy.loc[-1] = [-0.00001, 1.00001]
         xy.index = xy.index + 1  # shifting index
         xy = xy.sort_index()  # sorting by index
+        xy.sort_values('x', inplace=True) #TODO vérifier logique
     
     return xy, maxi_model1, maxi_model2
 

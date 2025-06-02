@@ -1,5 +1,8 @@
+sphinx
 sphinx-rtd-theme
-#cobra
-#scikit-learn
-#benpy
+pandas
+cobra
+scikit-learn
+benpy
+IPython
 #mocbapy

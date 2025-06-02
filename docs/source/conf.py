@@ -12,8 +12,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -43,7 +42,7 @@ extensions = [
     'sphinx.ext.napoleon'
 ]
 
-autodoc_mock_imports = ['cobra', 'scikit-learn', 'benpy', 'mocbapy', 'mimeco', 'pandas', 'mimeco']
+#autodoc_mock_imports = ['cobra', 'scikit-learn', 'benpy', 'mocbapy', 'pandas']
 
 napoleon_google_docstring = False
 napoleon_use_param = False
