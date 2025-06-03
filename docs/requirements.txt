@@ -6,3 +6,4 @@ scikit-learn
 benpy
 IPython
 mocbapy
+matplotlib
