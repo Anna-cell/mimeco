@@ -3,6 +3,6 @@ sphinx-rtd-theme
 pandas
 cobra
 scikit-learn
-#benpy
+benpy
 IPython
-#mocbapy
+mocbapy
