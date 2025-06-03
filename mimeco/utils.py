@@ -53,18 +53,20 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint, undescrib
     medium : pandas series
         Index : metabolites names
         values  : Availability of corresponding metabolite in the medium as a positive flux value.
-    undescribed_metabolites_constraint : string ("blocked" or "partially_constrained"). 
+    undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
-    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+        "as_is" : Their availability is the same as in the original inputted model.
+    undescribed_met_lb : negative float, optional
+        Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
         Default is -0.1
 
     Returns
     -------
     model : cobra.Model
     constrained_medium_dict : dictionnary {met_id:(lower_bound,upper_bound)}
-        Guide constraint of the ecosystem medium based on inputted medium data. 
+        Defines constraint of the ecosystem medium based on inputted medium data. 
         Controls fluxes of metabolites entering the emodels external environment.
     """
 
@@ -92,7 +94,7 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint, undescrib
 def unrestrain_medium(model):
     """
     Opens the exchange reaction of individual models to enable exchange with paired model. 
-    Environment constraints will be reaplied at the scale of the ecosystem in the construction
+    Environment constraints will be reapplied at the scale of the ecosystem in the construction
     of the ecosystem model.
 
     Parameters
@@ -140,7 +142,7 @@ def mo_fba(model1, model2, metabolic_dict, constrained_medium_dict):
 
 def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
     """
-    Parse the Pareto front and returns its points normalized by the optimal 
+    Parses the Pareto front and returns its points normalized by the optimal 
     growth of each model optimized in isolation
 
     Parameters
@@ -162,7 +164,7 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
         Pareto solution in which model2 objective value is the highest. 
     """
 
-    x = []
+  x = []
     y = []
     #Initialize analysis variables
     maxi_model1 = (solo_growth_model1, 0)
@@ -170,35 +172,35 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
     for i in range(len(sol_mofba.Primal.vertex_value)): #Parse Pareto front points
         if sol_mofba.Primal.vertex_type[i] == 1: #Select points (vs vectors) of the Pareto front
             #Normalize points based on model solo growth
-            x.append(sol_mofba.Primal.vertex_value[i][0]/solo_growth_model1) 
-            y.append(sol_mofba.Primal.vertex_value[i][1]/solo_growth_model2) 
-            
+            x.append(sol_mofba.Primal.vertex_value[i][0]/solo_growth_model1)
+            y.append(sol_mofba.Primal.vertex_value[i][1]/solo_growth_model2)
+           
             #Evaluate if model grows better in ecosystem compared to solo model
-            if sol_mofba.Primal.vertex_value[i][0] > maxi_model1[0]: 
+            if sol_mofba.Primal.vertex_value[i][0] > maxi_model1[0]:
                 maxi_model1 = sol_mofba.Primal.vertex_value[i]
             if sol_mofba.Primal.vertex_value[i][1] > maxi_model2[1]:
                 maxi_model2 = sol_mofba.Primal.vertex_value[i]
 
     #Add infered ecosystem Pareto points
     xy = pd.DataFrame({'x': x, 'y': y})
-    xy.sort_values('x', inplace=True)
+    xy.sort_values('x', inplace=True)      
                
     #Add initial points, corresponding to solo models optimal objective values
     #Values added are slightly dfferent than 1 and 0 to make sure the serie of coordinate is continuous
     if not ((xy['x'] == 1) & (xy['y'] == 0)).any():
         xy = pd.concat([xy, pd.DataFrame([{'x' : 1.00001, 'y' : -0.00001}])], ignore_index=True)
-        #xy = xy.append({'x' : 1.00001, 'y' : -0.00001}, ignore_index=True) 
+        #xy = xy.append({'x' : 1.00001, 'y' : -0.00001}, ignore_index=True)
     if not ((xy['x'] == 0) & (xy['y'] == 1)).any():
-        xy.loc[-1] = [-0.00001, 1.00001]
-        xy.index = xy.index + 1  # shifting index
-        xy = xy.sort_index()  # sorting by index
-        xy.sort_values('x', inplace=True) #TODO vérifier logique
-    
+    xy.reset_index(inplace = True, drop=True)
+    xy.loc[-1] = [-0.00001, 1.00001]
+    xy.index = xy.index + 1  # shifting index
+    xy = xy.sort_index()  # sorting by index
+   
     return xy, maxi_model1, maxi_model2
 
 def infer_interaction_score(xy):
     """
-    Calculates pareto front's area under the score to determine the interaction score of the ecosystem.
+    Calculates pareto front's area under the curve to determine the interaction score of the ecosystem.
     
     Parameters
     ----------
@@ -240,7 +242,7 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
     maxi_model1 : numpy.ndarray
         Pareto solution in which model1 objective value is the highest. 
     maxi_model2 : numpy.ndarray
-        Pareto solution in which model1 objective value is the highest. 
+        Pareto solution in which model2 objective value is the highest. 
     solo_growth_model1 : float
         Objective value of model1 when optimized alone in the described medium
     solo_growth_model2 : float
@@ -319,7 +321,7 @@ def mocba_to_cobra(ecosys):
         reaction.add_metabolites(dict_metabolites)
     return cobra_model
 
-def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size):
+def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size = 1000):
     """
     Samples the Pareto front, infering a solution for <sample_size> points on the pareto front.
 
@@ -345,7 +347,8 @@ def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, mo
                                                         then a new reaction must be built to constrain the model to a given 
                                                         objective value through its flux)
     sample_size : int, optional
-        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass.
+        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. 
+        Default is 1000.
 
     Returns
     -------
@@ -396,7 +399,7 @@ def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, mo
 
 def correlation(sampling):
     """
-    Measure correlation between all reactions of the ecosystem model. 
+    Measures correlation between all reactions of the ecosystem model. 
     Correlation type : spearman, because we are interested in common evolution, not proportionnality.
 
     Parameters
@@ -427,7 +430,7 @@ def oppositeSigns(x, y): #returns boolean. 1 if x y opposite sign, 0 otherwhise
  
 def reac_to_met_id(reac, model_id):
     """
-    Returns exchanged metabolite id from an exchange reaction. 
+    Returns exchanged metabolite id from an exchange reaction.
 
     Parameters
     ----------
@@ -440,6 +443,7 @@ def reac_to_met_id(reac, model_id):
     met : string
         metabolite id
     """
+    #TODO : add a "suffixe" parameter that enable the user to use their own suffixe, to adapt to any namespace. 
     met = reac.replace("_e:"+model_id, "") #BiGG namespace
     met = met.replace("(e):"+model_id, "") #Agora namespace
     met = met.replace("_e0:"+model_id, "") #gapseq namespace
@@ -463,14 +467,13 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
         Model denomination in the cobra.Model of model2
     model2_biomass_id : string
         id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, 
-                                                        then a new reaction must be built to constrain the model to a given 
-                                                        objective value through its flux)
-    exchange_correlation : float between 0 and -1
+        hen a new reaction must be built to constrain the model to a given objective value through its flux)
+    exchange_correlation : float between 0 and -1, optional
         defines the level correlation between secretion and uptake of a same metabolite by paired models
         default is 0.5
-    biomass_correlation : float between 0 and 1
+    biomass_correlation : float between 0 and 1, optional
         correlation between the exchange of the metabolite and the biomass production of model2 for its selection as crossfed.
-    lower_exchange_proportion : float between 0 and 1
+    lower_exchange_proportion : float between 0 and 1, optional
         proportion of the sampling solutions in which the metabolite of interest is secreted by one organism and uptaken by the other.
     Returns
     -------
@@ -561,9 +564,7 @@ def extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, m
 
 def plot_exchange(model1, sampling, potential_crossfeeding, model1_id, model2_id):
     """
-    Visualize crossfed metablites flux evlution on along the pareto front. This visualisation is rudimentary.
-    To create better and personnalized figures, use "mimeco.crossfed_metabolites_plotdata" which returns data relevant to the
-    predicted crossfed metabolites and build your preferred visualisation. 
+    Visualizes crossfed metablites flux evlution on along the pareto front. This visualisation is rudimentary.
 
     Parameters
     ----------
@@ -703,6 +704,9 @@ def no_compartment_id(metabolite):
     return metabolite, suffixe
 
 def find_namespace(model):
+    """
+    Identifies the namespace of the given model. Bigg (CarveMe), Agora (VMH) and gapseq namespace are tested and supported on mimeco. Other namespace could require adaptation.
+    """
     suffixe_list = []
     for ex_reac in model.exchanges[0:3]: #check 3 suffixes to be sure
         met = list(ex_reac.metabolites.keys())[0].id
@@ -718,5 +722,5 @@ def find_namespace(model):
         namespace = "gapseq"
     else:
         namespace = "unkown"
-        warnings.warn(f"mimeco could not identify the model's namespace. You need to instruct the suffixe for exchange reactions in the 'suffixe' argument of the reaction.")
+        warnings.warn(f"mimeco could not identify the model's namespace. You need to instruct the suffixe for exchange reactions in the 'suffixe' argument of the reaction. If you face further problems, please open an issue on mimeco's github.")
     return namespace, suffixe

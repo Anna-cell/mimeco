@@ -34,7 +34,8 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         "as_is" : Their availability is the same as in the original inputted model. 
-    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+    undescribed_met_lb : negative float, optional
+        Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
         Default is -0.1
     Returns
     -------
@@ -109,27 +110,24 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         "as_is" : Their availability is the same as in the original inputted model. 
-    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
-        Default is -0.1
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     model1_biomass_id : string
-        id of the reaction used as objective in model1 (if the objective coefficient is not null for several reactions, 
-                                                        then a new reaction must be built to constrain the model to a given 
-                                                        objective value through its flux)
+        id of the reaction used as objective in model1 (if the objective coefficient is not null for several reactions, then a new reaction must be built to constrain the model to a given objective value through its flux)
     model2_biomass_id : string
-        id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, 
-                                                        then a new reaction must be built to constrain the model to a given 
-                                                        objective value through its flux)
+        id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, then a new reaction must be built to constrain the model to a given objective value through its flux)
+    undescribed_met_lb : negative float, optional
+        Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+        Default is -0.1    
     sample_size : int, optional
         Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. The default is 1000.
-    exchange_correlation : float between 0 and -1
+    exchange_correlation : float between 0 and -1, optional
         defines the threshold for the correlation between secretion and uptake of a same metabolite by paired models for this metabolite to be considered exchanged
         default is 0.5
-    biomass_correlation : float between 0 and 1
+    biomass_correlation : float between 0 and 1, optional
         correlation threshold between the exchange of the metabolite and the biomass production of model2 for its selection as crossfed.
         default is 0.8
-    lower_exchange_proportion : float between 0 and 1
+    lower_exchange_proportion : float between 0 and 1, optional
         proportion of the sampling solutions in which the metabolite of interest is secreted by one organism and uptaken by the other.
     plot : Boolean, optional
         Rudimentary integrated plot function to visualize Pareto front.
@@ -224,11 +222,12 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         "as_is" : Their availability is the same as in the original inputted model.
-    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
-        Default is -0.1
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     model1_biomass_id : string
+    undescribed_met_lb : negative float, optional
+        Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+        Default is -0.1
     namespace : string, optionnal
         "bigg" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
         "agora" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
@@ -317,22 +316,24 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         "blocked" : They are not available in the medium at all (can result in model unable to grow)
         "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
-        "as_is" : Their availability is the same as in the original inputted model. 
-    undescribed_met_lb : Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
-        Default is -0.1
+        "as_is" : Their availability is the same as in the original inputted model.
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
-    exchange_correlation : float between 0 and -1
+    undescribed_met_lb : negative float, optional
+        Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
+        Default is -0.1
+    exchange_correlation : float between 0 and -1, optional
         defines the threshold for the correlation between secretion and uptake of a same metabolite by paired models for this metabolite to be considered exchanged
         default is 0.5
-    biomass_correlation : float between 0 and 1
+    biomass_correlation : float between 0 and 1, optional
         correlation threshold between the exchange of the metabolite and the biomass production of model2 for its selection as crossfed.
         default is 0.8
     plot : Boolean, optional
         Rudimentary integrated plot function to visualize Pareto front.
     sample_size : int, optional
-        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. The default is 1000.
-    retrieve_data : str, optionnal
+        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. 
+        Default is 1000.
+    retrieve_data : str, optional
         Returns data that can be used for custom analysis.
         "all" : returns the sampling dataframe containing the fluxes of each reaction of the ecosystem in all samples. 
         "selection": returns a subset of the sampling dataframe, containing the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
