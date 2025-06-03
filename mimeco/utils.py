@@ -55,9 +55,9 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint, undescrib
         values  : Availability of corresponding metabolite in the medium as a positive flux value.
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
-        "blocked" : They are not available in the medium at all (can result in model unable to grow)
-        "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
-        "as_is" : Their availability is the same as in the original inputted model.
+        **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
+        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"as_is"** : Their availability is the same as in the original inputted model.
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
         Default is -0.1
@@ -164,7 +164,7 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
         Pareto solution in which model2 objective value is the highest. 
     """
 
-  x = []
+    x = []
     y = []
     #Initialize analysis variables
     maxi_model1 = (solo_growth_model1, 0)
@@ -191,10 +191,10 @@ def pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2):
         xy = pd.concat([xy, pd.DataFrame([{'x' : 1.00001, 'y' : -0.00001}])], ignore_index=True)
         #xy = xy.append({'x' : 1.00001, 'y' : -0.00001}, ignore_index=True)
     if not ((xy['x'] == 0) & (xy['y'] == 1)).any():
-    xy.reset_index(inplace = True, drop=True)
-    xy.loc[-1] = [-0.00001, 1.00001]
-    xy.index = xy.index + 1  # shifting index
-    xy = xy.sort_index()  # sorting by index
+        xy.reset_index(inplace = True, drop=True)
+        xy.loc[-1] = [-0.00001, 1.00001]
+        xy.index = xy.index + 1  # shifting index
+        xy = xy.sort_index()  # sorting by index
    
     return xy, maxi_model1, maxi_model2
 
@@ -340,12 +340,10 @@ def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, mo
         Model denomination in the cobra.Model of model2
     model1_biomass_id : string
         id of the reaction used as objective in model1 (if the objective coefficient is not null for several reactions, 
-                                                        then a new reaction must be built to constrain the model to a given 
-                                                        objective value through its flux)
+        then a new reaction must be built to constrain the model to a given objective value through its flux)
     model2_biomass_id : string
         id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, 
-                                                        then a new reaction must be built to constrain the model to a given 
-                                                        objective value through its flux)
+        hen a new reaction must be built to constrain the model to a given objective value through its flux)
     sample_size : int, optional
         Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. 
         Default is 1000.
@@ -353,8 +351,8 @@ def pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, mo
     Returns
     -------
     sampling : pandas.dataframe
-        columns : reactions_id
-        rows : string(objective-value-model1_objective-value-model2) for a given sample
+        **columns** : reactions_id
+        **rows** : string(objective-value-model1_objective-value-model2) for a given sample
     """
 
     fba = cobra_ecosys.optimize() #just to get the reactions names for index of sampling
@@ -405,8 +403,8 @@ def correlation(sampling):
     Parameters
     ----------
     sampling : pandas.dataframe
-        columns : reactions_id
-        rows : string(objective-value-model1_objective-value-model2) for a given sample
+        **columns** : reactions_id
+        **rows** : string(objective-value-model1_objective-value-model2) for a given sample
 
     Returns
     -------
@@ -478,8 +476,8 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
     Returns
     -------
     potential_crossfeeding : dictionnary
-        keys : metabolites id
-        values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
+        **keys** : metabolites id
+        **values** : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
         proportion of samples with metabolite exchange from model1 to model2, 
         proportion of samples with metabolite exchange from model2 to model1]
     """
@@ -526,11 +524,11 @@ def extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, m
     Parameters
     ----------
     sampling : pandas.dataframe
-        columns : reactions_id
-        rows : string(objective-value-model1_objective-value-model2) for a given sample
+        **columns** : reactions_id
+        **rows** : string(objective-value-model1_objective-value-model2) for a given sample
     potential_crossfeeding : dictionnary
-        keys : metabolites id
-        values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
+        **keys** : metabolites id
+        **values** : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
         proportion of samples with metabolite exchange from model1 to model2, 
         proportion of samples with metabolite exchange from model2 to model1]
     model1_id : string
@@ -569,11 +567,11 @@ def plot_exchange(model1, sampling, potential_crossfeeding, model1_id, model2_id
     Parameters
     ----------
     sampling : pandas.dataframe
-        columns : reactions_id
-        rows : string(objective-value-model1_objective-value-model2) for a given sample
+        **columns** : reactions_id
+        **rows** : string(objective-value-model1_objective-value-model2) for a given sample
     potential_crossfeeding : dictionnary
-        keys : metabolites id
-        values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
+        **keys** : metabolites id
+        **values** : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
         proportion of samples with metabolite exchange from model1 to model2, 
         proportion of samples with metabolite exchange from model2 to model1]
     model1_id : string

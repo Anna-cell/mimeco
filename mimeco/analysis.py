@@ -27,13 +27,13 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
     model1: cobra.Model
     model2 : cobra.Model
     medium : pandas series
-        Index : metabolites names
-        values  : Availability of corresponding metabolite in the medium as a positive flux value.
+        **Index** : metabolites names
+        **values**  : Availability of corresponding metabolite in the medium as a positive flux value.
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
-        "blocked" : They are not available in the medium at all (can result in model unable to grow)
-        "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
-        "as_is" : Their availability is the same as in the original inputted model. 
+        **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
+        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"as_is"** : Their availability is the same as in the original inputted model. 
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
         Default is -0.1
@@ -103,13 +103,13 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
     model1 : cobra.Model
     model2 : cobra.Model
     medium : pandas series
-        Index : metabolites names
-        values  : Availability of corresponding metabolite in the medium as a positive flux value. 
+        **Index** : metabolites names
+        **values**  : Availability of corresponding metabolite in the medium as a positive flux value. 
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
-        "blocked" : They are not available in the medium at all (can result in model unable to grow)
-        "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
-        "as_is" : Their availability is the same as in the original inputted model. 
+        **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
+        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"as_is"** : Their availability is the same as in the original inputted model. 
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     model1_biomass_id : string
@@ -134,8 +134,8 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
         default is False
     retrieve_data : str, optionnal
         Returns data that can be used for custom analysis.
-        "all" : returns the sampling dataframe containing the fluxes of each reaction of the ecosystem in all samples. 
-        "selection": returns a subset of the sampling dataframe, containing the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
+        **"all"**: returns the sampling dataframe containing the fluxes of each reaction of the ecosystem in all samples. 
+        "**selection"**: returns a subset of the sampling dataframe, containing the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
         as well as the objective value of each model in these samples.
         If retrieve_data is set on "all" or "selection", the function returns a second variable with the corresponding dataframe. 
         default is "no"
@@ -143,16 +143,16 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
     Returns
     -------
     potential_crossfeeding : dictionnary
-        keys : metabolites id
-        values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
+        **keys** : metabolites id
+        **values** : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
         proportion of samples with metabolite exchange from model1 to model2, 
         proportion of samples with metabolite exchange from model2 to model1]
     sampling_data : pandas dataframe
         Dataframe based on the sampling, resulting in each row being a sample.
-        if retrieve_data == "selection"
+        **if retrieve_data == "selection"** 
         The first two columns records the objective value, in the given sample, of both models.
         Other columns are, by pairs, the flux values of the exchange reactions of a crossfed metabolite for both models.
-        if retrieve_data == "all" 
+        **if retrieve_data == "all"** 
         Columns are all reaction of the ecosystem model in the order of ecosys.reactions.
     """
     if medium is None:
@@ -215,13 +215,13 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
     ----------
     model2 : cobra.Model 
     medium : pandas series
-        Index : metabolites names
-        values  : Availability of corresponding metabolite in the medium as a positive flux value. 
+        **Index** : metabolites names
+        **values**  : Availability of corresponding metabolite in the medium as a positive flux value. 
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
-        "blocked" : They are not available in the medium at all (can result in model unable to grow)
-        "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
-        "as_is" : Their availability is the same as in the original inputted model.
+        **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
+        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"as_is"** : Their availability is the same as in the original inputted model.
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     model1_biomass_id : string
@@ -229,8 +229,8 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
         Default is -0.1
     namespace : string, optionnal
-        "bigg" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
-        "agora" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
+        **"bigg"** : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
+        **"agora"** : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
         default is "bigg"
     plot : Boolean, optional
         Rudimentary integrated plot function to visualize Pareto front.
@@ -310,13 +310,13 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     ----------
     model : cobra.Model
     medium : pandas series
-        Index : metabolites names
-        values  : Availability of corresponding metabolite in the medium as a positive flux value. 
+        **Index** : metabolites names
+        **values**  : Availability of corresponding metabolite in the medium as a positive flux value. 
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
-        "blocked" : They are not available in the medium at all (can result in model unable to grow)
-        "partially_constrained" : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
-        "as_is" : Their availability is the same as in the original inputted model.
+        **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
+        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"as_is"** : Their availability is the same as in the original inputted model.
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     undescribed_met_lb : negative float, optional
@@ -335,8 +335,8 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
         Default is 1000.
     retrieve_data : str, optional
         Returns data that can be used for custom analysis.
-        "all" : returns the sampling dataframe containing the fluxes of each reaction of the ecosystem in all samples. 
-        "selection": returns a subset of the sampling dataframe, containing the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
+        **"all"**: returns the sampling dataframe containing the fluxes of each reaction of the ecosystem in all samples. 
+        **"selection"**: returns a subset of the sampling dataframe, containing the predicted crossfed metabolites exchange fluxes in all samples of the Pareto front, 
         as well as the objective value of each model in these samples.
         If retrieve_data is set on "all" or "selection", the function returns a second variable with the corresponding dataframe. 
         default is "no"
@@ -344,16 +344,16 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     Returns
     -------
     potential_crossfeeding : dictionnary
-        keys : metabolites id
-        values : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
+        **keys**: metabolites id
+        **values**: [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
         proportion of samples with metabolite exchange from model1 to model2, 
         proportion of samples with metabolite exchange from model2 to model1]
     sampling_data : pandas dataframe
         Dataframe based on the sampling, resulting in each row being a sample.
-        if retrieve_data == "selection"
+        **if retrieve_data == "selection"**
         The first two columns records the objective value, in the given sample, of both models.
         Other columns are, by pairs, the flux values of the exchange reactions of a crossfed metabolite for both models.
-        if retrieve_data == "all" 
+        **if retrieve_data == "all"**
         Columns are all reaction of the ecosystem model in the order of ecosys.reactions.
     """
     if medium is None:
