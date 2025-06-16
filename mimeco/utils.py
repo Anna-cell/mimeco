@@ -448,7 +448,7 @@ def reac_to_met_id(reac, model_id):
     met = met.replace("EX_", "")
     return met
     
-def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_biomass_id, exchange_correlation = 0.5, biomass_correlation = 0.8, lower_exchange_proportion = 0.3):
+def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model1_biomass_id, model2_biomass_id, exchange_correlation = 0.5, biomass_correlation = 0.8, lower_exchange_proportion = 0.3):
     """
     Infers metabolites that are exchanged between organisms in the ecosystem models, correlated with an increasing model1 objective value.
     In other words, crossfed metabolite benefitting model1. Correlation options can be customized. Spearman correlation is used.
@@ -483,6 +483,11 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
     """
 
     potential_crossfeeding = {}
+    metabolite_id = []
+    model_benefiting = []
+    proportion_exchange_list = []
+    proportion_model1_to_model2 = []
+    proportion_model2_to_model1 = []
     for ex_reac in model1.exchanges:     
         ecosys_reac_id_model1 = ex_reac.id+":"+model1.id
         ecosys_reac_id_model2 = ex_reac.id+":"+model2_id
@@ -493,6 +498,34 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
             #and if both reactions are inversely correlated (fluxes variation are going opposite ways, one toward secretion, the other toward uptake)
             if (sum(sampling[ecosys_reac_id_model1])!=0 and sum(sampling[ecosys_reac_id_model2])!=0 and 
                     correlation_reactions.loc[ecosys_reac_id_model1, ecosys_reac_id_model2] <= -exchange_correlation):
+                # If the uptake / secretion of given metabolite in model1, associated with its secretion / uptake in model2, is correlated with increased model1 objective value
+                if abs(correlation_reactions.loc[ecosys_reac_id_model2, model1_biomass_id+":"+model1_id]) > biomass_correlation:
+                    exchange = 0
+                    model1_to_model2 = 0
+                    model2_to_model1 = 0
+                    for s in sampling.index: #parse all solutions for metabolite of interest
+                        # if metabolite is secreted in one model, and uptaken in the other
+                        if (round(sampling.loc[s, ecosys_reac_id_model1], 5) != 0 and
+                        	round(sampling.loc[s, ecosys_reac_id_model2], 5) != 0 and
+                        	oppositeSigns(sampling.loc[s, ecosys_reac_id_model1], sampling.loc[s, ecosys_reac_id_model2])): 
+                            exchange = exchange+1
+                            if sampling.loc[s, ecosys_reac_id_model1] > 0 :
+                                model1_to_model2 = model1_to_model2 + 1
+                            elif sampling.loc[s, ecosys_reac_id_model2] > 0:
+                                model2_to_model1 = model2_to_model1 + 1
+                    proportion_exchange = exchange/len(sampling)
+                    if proportion_exchange > lower_exchange_proportion and met_id not in potential_crossfeeding.keys():
+                        #Fill lists for final dataframe, changing exchange results to proportions
+                        metabolite_id.append(met_id)
+                        proportion_exchange_list.append(proportion_exchange)
+                        proportion_model1_to_model2.append(model1_to_model2/len(sampling))
+                        proportion_model2_to_model1.append(model2_to_model1/len(sampling))
+                        # Does the exchange benefit only model 1 or both models ?
+                        if abs(correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id]) > biomass_correlation:
+                            model_benefiting.append("both")
+                        else:
+                            model_benefiting.append("model1")
+
                 # If the uptake / secretion of given metabolite in model1, associated with its secretion / uptake in model2, is correlated with increased model2 objective value
                 if abs(correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id]) > biomass_correlation:
                     exchange = 0
@@ -510,12 +543,16 @@ def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model2_bio
                                 model2_to_model1 = model2_to_model1 + 1
                     proportion_exchange = exchange/len(sampling)
                     if proportion_exchange > lower_exchange_proportion and met_id not in potential_crossfeeding.keys():
-                        #exchange results to proportions
-                        proportion_model1_to_model2 = model1_to_model2/len(sampling)
-                        proportion_model2_to_model1 = model2_to_model1/len(sampling)
-                        potential_crossfeeding[met_id] = [proportion_exchange, proportion_model1_to_model2, proportion_model2_to_model1]
-    else:
-        return potential_crossfeeding
+                        #Fill lists for final dataframe, changing exchange results to proportions
+                        metabolite_id.append(met_id)
+                        proportion_exchange_list.append(proportion_exchange)
+                        proportion_model1_to_model2.append(model1_to_model2/len(sampling))
+                        proportion_model2_to_model1.append(model2_to_model1/len(sampling))
+                        # Cases where the exchange of a same metabolite benefit both modeled has been covered before. only exchanges benefitting model2 only are left.
+                        model_benefiting.append("model2")
+    potential_crossfeeding = pd.DataFrame({"metabolite_id":metabolite_id, "model_benefiting":model_benefiting, "proportion_exchange": proportion_exchange_list, 
+                                            "proportion_model1_to_model2":proportion_model1_to_model2, "proportion_model2_to_model1": proportion_model2_to_model1})
+    return potential_crossfeeding
 
 def extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, model2_id):
     """

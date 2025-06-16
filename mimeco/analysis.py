@@ -191,7 +191,7 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
     sampling = utils.pareto_sampling(cobra_ecosys, xy, solo_growth_model1, solo_growth_model2, model1_id, model2_id, model1_biomass_id, model2_biomass_id, sample_size=sample_size)
     correlation_reactions = utils.correlation(sampling)
     potential_crossfeeding = utils.crossfed_mets(model1 = model1, sampling = sampling, 
-                                                correlation_reactions = correlation_reactions, model2_id = model2_id, 
+                                                correlation_reactions = correlation_reactions, model1_id = model1_id, model2_id = model2_id, model1_biomass_id=model1_biomass_id,
                                                 model2_biomass_id=model2_biomass_id, exchange_correlation = exchange_correlation, 
                                                 biomass_correlation = biomass_correlation, lower_exchange_proportion = lower_exchange_proportion)
     if plot: #Visualize pareto front
@@ -410,7 +410,7 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     sampling = utils.pareto_sampling(cobra_ecosys, xy, solo_growth_host, solo_growth_model, host.id, model_id, host_biomass_id, model_biomass_id, sample_size = sample_size)
     correlation_reactions = utils.correlation(sampling)
     potential_crossfeeding = utils.crossfed_mets(model1 = model, sampling = sampling, 
-                                                correlation_reactions = correlation_reactions, model2_id = host.id, 
+                                                correlation_reactions = correlation_reactions, model1_id = model_id, model2_id = host.id, model1_biomass_id=model_biomass_id,
                                                 model2_biomass_id = host_biomass_id, exchange_correlation = exchange_correlation,
                                                 biomass_correlation = biomass_correlation)
     if plot: #Visualize pareto front
