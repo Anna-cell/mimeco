@@ -228,12 +228,14 @@ def infer_interaction_score(xy):
     return interaction_score
     
 
-def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_growth_model1, solo_growth_model2):
+def infer_interaction_type(xy, interaction_score, maxi_model1, maxi_model2, solo_growth_model1, solo_growth_model2):
     """
     Infers inetraction type from the models solo maximal objective values, ecosystem maximal objective value and interaction score.
 
     Parameters
     ----------
+    xy : pandas dataframe
+    Normalized pareto points
     interaction_score : float
         Predicts the nature of the interaction between model1 and model 2. 
         Score < 0 predicts a competitive interaction,
@@ -259,7 +261,9 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
     #Evaluate parameters defining interaction category:
         #interaction_type[0] : model1 growth better in ecosystem than alone
         #interaction_type[1] : model2 growth better in ecosystem than alone
-        #interaction_type[2] : Both models share an optimal solution
+        #interaction_type[2] : A solution exists where both models have a bette objective value compared to monoculture.
+        #If both models share an optimal solution, then a + is added to the code, resulting in "extreme mutualism"
+
     if maxi_model1[0] > solo_growth_model1+(0.001*solo_growth_model1): #solution is an approximation, so slightly varies between instances, 
                                                                       #we make sure the difference in growth is not an artefact
         interaction_type_code[0] = "1"        
@@ -267,6 +271,13 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
         interaction_type_code[1] = "1"
     if tuple(maxi_model1) == tuple(maxi_model2) :
         interaction_type_code[2] = "1"
+    if interaction_type_code == "111":
+        #If both models share an optimal solution
+        interaction_type_code = "111+"
+    if interaction_type_code == "110":
+        #If a solution exists where they both grow better than alone, Even if this is not a shared optimum
+        if len(xy[(xy['x'] > 1.001) & (xy['y'] > 1.001)]) != 0: 
+            interaction_type_code = "111"
     interaction_type_code=''.join(interaction_type_code)
     if interaction_score < -0.0001 and interaction_type_code == "000": #Make sure score is negative despite approximation : competition
         interaction_type_code = "-000"
@@ -277,7 +288,7 @@ def infer_interaction_type(interaction_score, maxi_model1, maxi_model2, solo_gro
         #raise RuntimeError("There was a problem while infering interaction_type. It is probably in the definition of the model or medium.")
     interaction_type_translation = {"-000":"competition", "=000": "neutrality", 
                                     "100":"favors model1", "010":"favors model2",
-                                    "110":"limited mutualism", "111":"mutualism",
+                                    "110":"limited mutualism", "111":"mutualism", "111+": "extreme mutualism",
                                     "011" : "Favors model2", "101" : "favors model1",
                                     "001": "neutralism"}
     interaction_type = interaction_type_translation[interaction_type_code]
