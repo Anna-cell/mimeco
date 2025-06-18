@@ -77,7 +77,7 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
     sol_mofba = utils.mo_fba(model1, model2, metabolic_dict, medium_dict)[0] #get multi-objective solution (pareto front)
     xy, maxi_model1, maxi_model2 = utils.pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2) #parse and normalize pareto front
     interaction_score = utils.infer_interaction_score(xy) #measure AUC of Pareto front, translates it in quantitative interaction prediction
-    interaction_type = utils.infer_interaction_type(interaction_score, maxi_model1, maxi_model2,solo_growth_model1, solo_growth_model2) #infers interaction type from pareto front's shape.
+    interaction_type = utils.infer_interaction_type(xy, interaction_score, maxi_model1, maxi_model2,solo_growth_model1, solo_growth_model2) #infers interaction type from pareto front's shape.
     if verbose:
         print(model1.id+" solo maximal growth is: "+str(solo_growth_model1))
         print("its maximal growth in ecosystem is: "+str(maxi_model1[0]))

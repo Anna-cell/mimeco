@@ -459,7 +459,7 @@ def reac_to_met_id(reac, model_id):
     met = met.replace("EX_", "")
     return met
     
-def crossfed_mets(model1, sampling, correlation_reactions, model2_id, model1_biomass_id, model2_biomass_id, exchange_correlation = 0.5, biomass_correlation = 0.8, lower_exchange_proportion = 0.3):
+def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id, model1_biomass_id, model2_biomass_id, exchange_correlation = 0.5, biomass_correlation = 0.8, lower_exchange_proportion = 0.3):
     """
     Infers metabolites that are exchanged between organisms in the ecosystem models, correlated with an increasing model1 objective value.
     In other words, crossfed metabolite benefitting model1. Correlation options can be customized. Spearman correlation is used.
@@ -640,7 +640,7 @@ def plot_exchange(model1, sampling, potential_crossfeeding, model1_id, model2_id
         if obj_value_model2 > max_model2:
             max_model2 = obj_value_model2
             max_ind_model2 = i
-    for metabolite in potential_crossfeeding.keys():
+    for metabolite in potential_crossfeeding["metabolite_id"]:
         ecosys_reac_id_model1 = "EX_"+metabolite+suffixe+":"+model1_id
         ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
         a = sampling[ecosys_reac_id_model1]
