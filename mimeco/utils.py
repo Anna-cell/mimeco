@@ -281,7 +281,7 @@ def infer_interaction_type(xy, interaction_score, maxi_model1, maxi_model2, solo
     interaction_type_code=''.join(interaction_type_code)
     if interaction_score < -0.0001 and interaction_type_code == "000": #Make sure score is negative despite approximation : competition
         interaction_type_code = "-000"
-    elif interaction_score >= -0.0001 and interaction_score <= 0.0001: #Make sure score is equivalent to 0 : neutrality
+    elif interaction_score >= -0.0001 and interaction_score <= 0.0001 and interaction_type_code == "000": #Make sure score is equivalent to 0 : neutrality. Also, Make sure it is not bc mutualist area compensate competition area and result in zero, but with a non neutral Pareto front. 
         interaction_type_code = "=000" 
     if interaction_type_code not in ["-000", "=000", "100","010","110", "111", "011", "101"]:
         print(interaction_type_code)
@@ -298,10 +298,10 @@ def pareto_plot(xy, model1_id, model2_id):
     plt.title("Pareto front of "+model1_id+" - "+model2_id+" metabolic interaction")
     plt.xlabel(model1_id+"'s objective value")
     plt.ylabel(model2_id+"'s objective value")
-    plt.plot(xy['x'].to_numpy(), xy['y'].to_numpy(), '#ff0000', linestyle="-")
-    plt.fill_between(xy['x'].to_numpy(), xy['y'].to_numpy(), color = "#f08c8c30")
-    plt.axhline(y = 1, color = '#1155cc', linestyle = '--', linewidth = 1)
-    plt.axvline(x = 1, color = '#1155cc', linestyle = '--', linewidth = 1)
+    plt.plot(xy['x'].to_numpy(), xy['y'].to_numpy(), '#626262ff', linestyle="-")
+    plt.fill_between(xy['x'].to_numpy(), xy['y'].to_numpy(), color = "#c4c4c4ff")
+    plt.axhline(y = 1, color = '#009e73ff', linestyle = '--', linewidth = 1)
+    plt.axvline(x = 1, color = '#009e73ff', linestyle = '--', linewidth = 1)
     plt.show()
 
 def mocba_to_cobra(ecosys):
@@ -600,7 +600,7 @@ def extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, m
         obj_value_model2.append(float(i.split("_", 1)[1]))
     sampling_data = pd.DataFrame({"obj_value_model1" : obj_value_model1, 
                                   "obj_value_model2" : obj_value_model2})
-    for metabolite in potential_crossfeeding.keys():
+    for metabolite in potential_crossfeeding["metabolite_id"]:
         ecosys_reac_id_model1 = "EX_"+metabolite+suffixe+":"+model1_id
         ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
         sampling_data[ecosys_reac_id_model1] = sampling[ecosys_reac_id_model1].values
@@ -645,10 +645,10 @@ def plot_exchange(model1, sampling, potential_crossfeeding, model1_id, model2_id
         ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
         a = sampling[ecosys_reac_id_model1]
         b = sampling[ecosys_reac_id_model2]
-        plt.plot(a, "#e06666", label = model1_id)
-        plt.plot(b, "#3d85c6", label = model2_id)
-        plt.axvline(x = max_ind_model1, color = "#e06666", linestyle=':')
-        plt.axvline(x = max_ind_model2, color = "#3d85c6", linestyle=':')
+        plt.plot(a, "#c90016ff", label = model1_id)
+        plt.plot(b, "#0072b2ff", label = model2_id)
+        plt.axvline(x = max_ind_model1, color = "c90016ff", linestyle=':')
+        plt.axvline(x = max_ind_model2, color = "#0072b2ff", linestyle=':')
         plt.tick_params(
         axis='x',          # changes apply to the x-axis
         which='both',      # both major and minor ticks are affected
