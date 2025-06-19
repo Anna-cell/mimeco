@@ -1,3 +1,7 @@
+.. meta::
+   :description: MIMEco is a Python package that explores communities metabolic interactions using multi-objective linear programming on GEnome-scale Metabolic models (GEMs). This tool automates the inference of interaction type, interaction score and exchanged metabolites between two models in a given condition.
+
+
 Welcome to MIMEco
 ==================
 **MIMEco** is a Python package that explores communities metabolic interactions using multi-objective linear programming on GEnome-scale Metabolic models (GEMs).

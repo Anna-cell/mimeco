@@ -26,6 +26,9 @@ project = 'mimeco'
 copyright = '2025, Anna Lambert'
 author = 'Anna Lambert'
 
+html_title = "MIMEco – Metabolic Interaction Modeling in Ecosystems"
+html_short_title = "Mimeco"
+
 # The full version, including alpha/beta/rc tags
 release = '0.0'
 
