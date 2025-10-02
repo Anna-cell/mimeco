@@ -286,7 +286,7 @@ def infer_interaction_type(xy, interaction_score, maxi_model1, maxi_model2, solo
     if interaction_type_code not in ["-000", "=000", "100","010","110", "111", "011", "101"]:
         print(interaction_type_code)
         #raise RuntimeError("There was a problem while infering interaction_type. It is probably in the definition of the model or medium.")
-    interaction_type_translation = {"-000":"competition", "=000": "neutrality", 
+    interaction_type_translation = {"-000":"competition", "=000": "neutralism", 
                                     "100":"favors model1", "010":"favors model2",
                                     "110":"limited mutualism", "111":"mutualism", "111+": "extreme mutualism",
                                     "011" : "Favors model2", "101" : "favors model1",
@@ -472,11 +472,16 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
         rows : string(objective-value-model1_objective-value-model2) for a given sample
     correlation_reactions : pandas dataframe
         a correlation matrix featuring all reactions of the ecosystem model
+    model1_id : string
+        Model denomination in the cobra.Model of model1
     model2_id : string
         Model denomination in the cobra.Model of model2
+    model1_biomass_id : string
+        id of the reaction used as objective in model1 (if the objective coefficient is not null for several reactions, 
+        then a new reaction must be built to constrain the model to a given objective value through its flux)
     model2_biomass_id : string
         id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, 
-        hen a new reaction must be built to constrain the model to a given objective value through its flux)
+        then a new reaction must be built to constrain the model to a given objective value through its flux)
     exchange_correlation : float between 0 and -1, optional
         defines the level correlation between secretion and uptake of a same metabolite by paired models
         default is 0.5
@@ -486,11 +491,11 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
         proportion of the sampling solutions in which the metabolite of interest is secreted by one organism and uptaken by the other.
     Returns
     -------
-    potential_crossfeeding : dictionnary
-        **keys** : metabolites id
-        **values** : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
-        proportion of samples with metabolite exchange from model1 to model2, 
-        proportion of samples with metabolite exchange from model2 to model1]
+    potential_crossfeeding : pandas.dataframe
+        **columns** : metabolite_id model_benefiting, proportion_exchange (proportion of samples featuring inverse secretion/uptake for a same metabolite),
+        proportion_model1_to_model2 (proportion of samples with metabolite exchange from model1 to model2), proportion_model2_to_model1 (proportion of samples with metabolite exchange from model2 to model1),
+        correlation_obj_model1, correlation_obj_model2
+        
     """
 
     potential_crossfeeding = {}
@@ -499,6 +504,8 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
     proportion_exchange_list = []
     proportion_model1_to_model2 = []
     proportion_model2_to_model1 = []
+    correlation_with_biomass_model1 = []
+    correlation_with_biomass_model2 = []
     for ex_reac in model1.exchanges:     
         ecosys_reac_id_model1 = ex_reac.id+":"+model1.id
         ecosys_reac_id_model2 = ex_reac.id+":"+model2_id
@@ -509,7 +516,7 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
             #and if both reactions are inversely correlated (fluxes variation are going opposite ways, one toward secretion, the other toward uptake)
             if (sum(sampling[ecosys_reac_id_model1])!=0 and sum(sampling[ecosys_reac_id_model2])!=0 and 
                     correlation_reactions.loc[ecosys_reac_id_model1, ecosys_reac_id_model2] <= -exchange_correlation):
-                # If the uptake / secretion of given metabolite in model1, associated with its secretion / uptake in model2, is correlated with increased model1 objective value
+                # If the uptake / secretion of given metabolite in model1, associated with its secretion / uptake in model2, is correlated with increased (or decreased) model1 objective value
                 if abs(correlation_reactions.loc[ecosys_reac_id_model2, model1_biomass_id+":"+model1_id]) > biomass_correlation:
                     exchange = 0
                     model1_to_model2 = 0
@@ -531,6 +538,8 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
                         proportion_exchange_list.append(proportion_exchange)
                         proportion_model1_to_model2.append(model1_to_model2/len(sampling))
                         proportion_model2_to_model1.append(model2_to_model1/len(sampling))
+                        correlation_with_biomass_model1.append(correlation_reactions.loc[ecosys_reac_id_model2, model1_biomass_id+":"+model1_id])
+                        correlation_with_biomass_model2.append(correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id])
                         # Does the exchange benefit only model 1 or both models ?
                         if abs(correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id]) > biomass_correlation:
                             model_benefiting.append("both")
@@ -559,10 +568,13 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
                         proportion_exchange_list.append(proportion_exchange)
                         proportion_model1_to_model2.append(model1_to_model2/len(sampling))
                         proportion_model2_to_model1.append(model2_to_model1/len(sampling))
+                        correlation_with_biomass_model1.append(correlation_reactions.loc[ecosys_reac_id_model2, model1_biomass_id+":"+model1_id])
+                        correlation_with_biomass_model2.append(correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id])
                         # Cases where the exchange of a same metabolite benefit both modeled has been covered before. only exchanges benefitting model2 only are left.
                         model_benefiting.append("model2")
     potential_crossfeeding = pd.DataFrame({"metabolite_id":metabolite_id, "model_benefiting":model_benefiting, "proportion_exchange": proportion_exchange_list, 
-                                            "proportion_model1_to_model2":proportion_model1_to_model2, "proportion_model2_to_model1": proportion_model2_to_model1})
+                                            "proportion_model1_to_model2":proportion_model1_to_model2, "proportion_model2_to_model1": proportion_model2_to_model1, 
+                                            "correlation_obj_model1": correlation_with_biomass_model1, "correlation_obj_model2":correlation_with_biomass_model2})
     return potential_crossfeeding
 
 def extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, model2_id):

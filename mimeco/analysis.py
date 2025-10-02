@@ -37,10 +37,15 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
         Default is -0.1
+    plot : Boolean, optional
+        Rudimentary integrated plot function to visualize the exchange fluxes of predicted crossfed metabolite along the Pareto sampling.
+        default is False
+    verbose: Boolean, optional
+        If True, will print models maximal growth in monoculture and co-culture. 
     Returns
     -------
     interaction_score : float
-        Predicts the nature of the interaction between model1 and model 2. 
+        Predicts the nature of the interaction between model1 and model2. 
         Score < 0 predicts a competitive interaction,
         Score = 0 predicts a neutral interaction
         Score > 0 predicts a positive interaction
@@ -95,13 +100,19 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
                         plot = False, retrieve_data = "no"):
     """
     A function that, given 2 models in the same namespace and a defined medium, predicts metabolic exchanges that
-    are correlated with the increase of model2 objective value. Correlation options can be customized. Spearman correlation is used.
+    are correlated with one model's objective value. Correlation options can be customized. Spearman correlation is used.
     plot and retrieve_data options enable further analysis (see documentation)
 
     Parameters
     ----------
     model1 : cobra.Model
     model2 : cobra.Model
+    solver : string
+        solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
+    model1_biomass_id : string
+        id of the reaction used as objective in model1 (if the objective coefficient is not null for several reactions, then a new reaction must be built to constrain the model to a given objective value through its flux)
+    model2_biomass_id : string
+        id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, then a new reaction must be built to constrain the model to a given objective value through its flux)
     medium : pandas series
         **Index** : metabolites names
         **values**  : Availability of corresponding metabolite in the medium as a positive flux value. 
@@ -110,12 +121,6 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
         **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
         **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         **"as_is"** : Their availability is the same as in the original inputted model. 
-    solver : string
-        solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
-    model1_biomass_id : string
-        id of the reaction used as objective in model1 (if the objective coefficient is not null for several reactions, then a new reaction must be built to constrain the model to a given objective value through its flux)
-    model2_biomass_id : string
-        id of the reaction used as objective in model2 (if the objective coefficient is not null for several reactions, then a new reaction must be built to constrain the model to a given objective value through its flux)
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
         Default is -0.1    
@@ -142,11 +147,10 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
 
     Returns
     -------
-    potential_crossfeeding : dictionnary
-        **keys** : metabolites id
-        **values** : [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
-        proportion of samples with metabolite exchange from model1 to model2, 
-        proportion of samples with metabolite exchange from model2 to model1]
+    potential_crossfeeding : pandas.dataframe
+        **columns** : metabolite_id model_benefiting, proportion_exchange (proportion of samples featuring inverse secretion/uptake for a same metabolite),
+        proportion_model1_to_model2 (proportion of samples with metabolite exchange from model1 to model2), proportion_model2_to_model1 (proportion of samples with metabolite exchange from model2 to model1),
+        correlation_obj_model1, correlation_obj_model2
     sampling_data : pandas dataframe
         Dataframe based on the sampling, resulting in each row being a sample.
         **if retrieve_data == "selection"** 
@@ -206,14 +210,14 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
 
 
 def enterocyte_interaction_score_and_type(model, solver, medium = None, undescribed_metabolites_constraint = None, 
-                                          undescribed_met_lb = -0.1, plot = False):
+                                          undescribed_met_lb = -0.1, namespace= "bigg", plot = False):
     """
     A function infering the interaction between a given model and a small intestinal epithelial cell (sIEC) adapted from https://doi.org/10.1093/hmg/ddt119.
     Returns qualitative (interaction_type) and quantitative (interaction_score) information on their metabolic interaction.
     
     Parameters
     ----------
-    model2 : cobra.Model 
+    model : cobra.Model 
     medium : pandas series
         **Index** : metabolites names
         **values**  : Availability of corresponding metabolite in the medium as a positive flux value. 
@@ -224,7 +228,6 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
         **"as_is"** : Their availability is the same as in the original inputted model.
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
-    model1_biomass_id : string
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
         Default is -0.1
@@ -304,11 +307,15 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
                                     retrieve_data = "no"):
     """
     A function that, given 2 models in the same namespace and a defined medium, predicts metabolic exchanges that
-    are correlated with the increase of model2 objective value.
+    are correlated with the evolution of a model's objective value.
 
     Parameters
     ----------
     model : cobra.Model
+    solver : string
+        solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
+    model_biomass_id : string
+        id of the reaction used as objective in model (if the objective coefficient is not null for several reactions, then a new reaction must be built to constrain the model to a given objective value through its flux)
     medium : pandas series
         **Index** : metabolites names
         **values**  : Availability of corresponding metabolite in the medium as a positive flux value. 
@@ -317,22 +324,20 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
         **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
         **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
         **"as_is"** : Their availability is the same as in the original inputted model.
-    solver : string
-        solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
         Default is -0.1
+    plot : Boolean, optional
+        Rudimentary integrated plot function to visualize Pareto front.
+    sample_size : int, optional
+        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. 
+        Default is 1000.
     exchange_correlation : float between 0 and -1, optional
         defines the threshold for the correlation between secretion and uptake of a same metabolite by paired models for this metabolite to be considered exchanged
         default is 0.5
     biomass_correlation : float between 0 and 1, optional
         correlation threshold between the exchange of the metabolite and the biomass production of model2 for its selection as crossfed.
         default is 0.8
-    plot : Boolean, optional
-        Rudimentary integrated plot function to visualize Pareto front.
-    sample_size : int, optional
-        Number of samples sampled from the Pareto front to infer correlation between exchange reactions and biomass. 
-        Default is 1000.
     retrieve_data : str, optional
         Returns data that can be used for custom analysis.
         **"all"**: returns the sampling dataframe containing the fluxes of each reaction of the ecosystem in all samples. 
@@ -343,11 +348,10 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
 
     Returns
     -------
-    potential_crossfeeding : dictionnary
-        **keys**: metabolites id
-        **values**: [proportion of samples featuring inverse secretion/uptake for a same metabolite, 
-        proportion of samples with metabolite exchange from model1 to model2, 
-        proportion of samples with metabolite exchange from model2 to model1]
+    potential_crossfeeding : pandas.dataframe
+        **columns** : metabolite_id model_benefiting, proportion_exchange (proportion of samples featuring inverse secretion/uptake for a same metabolite),
+        proportion_model1_to_model2 (proportion of samples with metabolite exchange from model1 to model2), proportion_model2_to_model1 (proportion of samples with metabolite exchange from model2 to model1),
+        correlation_obj_model1, correlation_obj_model2
     sampling_data : pandas dataframe
         Dataframe based on the sampling, resulting in each row being a sample.
         **if retrieve_data == "selection"**
