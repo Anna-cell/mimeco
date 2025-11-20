@@ -17,7 +17,7 @@ Documentation
 
 For detailed documentation, please go to `readthedocs : mimeco <https://mimeco.readthedocs.io/en/latest/>`_
 
-Dependancies
+Dependencies
 ~~~~~~~~~~~~~
 
 **GLPK**:
