@@ -547,7 +547,7 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
                             model_benefiting.append("model1")
 
                 # If the uptake / secretion of given metabolite in model1, associated with its secretion / uptake in model2, is correlated with increased model2 objective value
-                if abs(correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id]) > biomass_correlation:
+                elif abs(correlation_reactions.loc[ecosys_reac_id_model1, model2_biomass_id+":"+model2_id]) > biomass_correlation:
                     exchange = 0
                     model1_to_model2 = 0
                     model2_to_model1 = 0
