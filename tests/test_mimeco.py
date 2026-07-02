@@ -7,29 +7,31 @@ Created on Mon Jan 20 15:32:14 2025
 """
 import pickle
 import cobra
-import utils
+import mimeco.utils as utils
 import mimeco
+import os
+
+this_dir = os.path.dirname(os.path.realpath(__file__))
 
 
-
-model1 = cobra.io.read_sbml_model("/home/e158401a/Documents/MIMECO/tests/resources/Lactobacillus_plantarum_WCFS1.xml")
-model2 = cobra.io.read_sbml_model("/home/e158401a/Documents/MIMECO/tests/resources/Akkermansia_muciniphila_ATCC_BAA_835.xml")
+model1 = cobra.io.read_sbml_model(os.path.join(this_dir, "resources/Lactobacillus_plantarum_WCFS1.xml"))
+model2 = cobra.io.read_sbml_model(os.path.join(this_dir, "resources/Akkermansia_muciniphila_ATCC_BAA_835.xml"))
 model1.solver = "cplex"
 model2.solver = "cplex"
 
-with open("/home/e158401a/Documents/MIMECO/tests/resources/Western_diet.pickle", "rb") as fp:   # Unpickling
+with open(os.path.join(this_dir, "resources/Western_diet.pickle"), "rb") as fp:   # Unpickling
     Western_diet = pickle.load(fp)
 
-with open("/home/e158401a/Documents/MIMECO/tests/resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_interaction_type.pickle", "rb") as fp:   # Unpickling
+with open(os.path.join(this_dir, "resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_interaction_type.pickle"), "rb") as fp:   # Unpickling
     interaction_type_LPAM = pickle.load(fp)
 
-with open("/home/e158401a/Documents/MIMECO/tests/resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_interaction_score.pickle", "rb") as fp:   # Unpickling
+with open(os.path.join(this_dir, "resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_interaction_score.pickle"), "rb") as fp:   # Unpickling
     interaction_score_LPAM = pickle.load(fp)
 
-with open("/home/e158401a/Documents/MIMECO/tests/resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_medium_dict.pickle", "rb") as fp:   # Unpickling
+with open(os.path.join(this_dir, "resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_medium_dict.pickle"), "rb") as fp:   # Unpickling
     medium_dict_LPAM = pickle.load(fp)
 
-with open("/home/e158401a/Documents/MIMECO/tests/resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_potential_exchange.pickle", "rb") as fp:   # Unpickling
+with open(os.path.join(this_dir, "resources/Lactobacillus_plantarum_WCFS1_Akkermansia_muciniphila_ATCC_BAA_835_WD_PC_potential_exchange.pickle"), "rb") as fp:   # Unpickling
     exchange_potential_LPAM = pickle.load(fp)
 
 model1.solver = "cplex"
