@@ -659,7 +659,7 @@ def plot_exchange(model1, sampling, potential_crossfeeding, model1_id, model2_id
         b = sampling[ecosys_reac_id_model2]
         plt.plot(a, "#c90016ff", label = model1_id)
         plt.plot(b, "#0072b2ff", label = model2_id)
-        plt.axvline(x = max_ind_model1, color = "c90016ff", linestyle=':')
+        plt.axvline(x = max_ind_model1, color = "#c90016ff", linestyle=':')
         plt.axvline(x = max_ind_model2, color = "#0072b2ff", linestyle=':')
         plt.tick_params(
         axis='x',          # changes apply to the x-axis

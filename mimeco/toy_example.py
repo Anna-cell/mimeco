@@ -8,7 +8,6 @@ Created on Mon Jan 20 14:38:53 2025
 """
 
 import os
-#os.chdir("/home/e158401a/Documents/mimeco")
 import cobra
 from mimeco import analysis
 import pandas as pd
@@ -21,8 +20,9 @@ from importlib.resources import files
 
 Western_diet = pd.read_csv(files("mimeco.resources").joinpath("Western_diet_BiGG.csv"), index_col = 0)
 
-model1 = cobra.io.read_sbml_model("/home/e158401a/Documents/models/embl_gems/models/b/bifidobacterium/Bifidobacterium_adolescentis_ATCC_15703.xml")
-model2 = cobra.io.read_sbml_model("/home/e158401a/Documents/models/embl_gems/models/l/lactobacillus/Lactobacillus_rhamnosus_GG_GG_ATCC_53103.xml")
+# From https://github.com/cdanielmachado/embl_gems
+model1 = cobra.io.read_sbml_model(files("mimeco.examples").joinpath("Bifidobacterium_adolescentis_ATCC_15703.xml.gz"))
+model2 = cobra.io.read_sbml_model(files("mimeco.examples").joinpath("Lactobacillus_rhamnosus_GG_GG_ATCC_53103.xml.gz"))
 model1.solver = "cplex"
 model2.solver = "cplex"
 
@@ -45,7 +45,7 @@ potential_exchange, data = analysis.crossfed_metabolites(model1 = model1, model2
 
 #with enterocyte
 start_time = time.time()
-int_score, int_type = analysis.enterocyte_interaction_score_and_type(model1, Western_diet, undescribed_metabolites_constraint="as_is", 
+int_score, int_type = analysis.enterocyte_interaction_score_and_type(model1, solver="cplex", medium=Western_diet, undescribed_metabolites_constraint="as_is", 
                                                                    namespace="BIGG", plot=True)
 print("--- %s seconds ---" % (time.time() - start_time))
 
