@@ -8,7 +8,7 @@ The concept of the methodology is described in Lambert, A., Budinich, M., Mahé,
 
 Note : A technical note dedicated to this package will be published
 
-.. image:: mimeco/resources/MIMEco_logo.png
+.. image:: mimeco/resources/MIMEco_logo_blue.png
   :width: 500
   :alt: MIMEco logo
 
