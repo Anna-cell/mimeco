@@ -26,9 +26,6 @@ def restrain_blood_exchange_enterocyte(model, medium_blood = "AAD"):
     ----------
     model : cobra.Model
         should be small intestinal epithelial cell adapted from https://doi.org/10.1093/hmg/ddt119
-    namespace : string
-        "bigg" : enterocyte and medium in the BiGG namespace. Compatible with CarveMe.
-        "agora" : enterocyte and medium in the Agora namespace: Compatible with Agora and VMH models. (Built with Model SEED / Kbase)
     medium_blood : pandas.DataFrame, optional
         A pandas.DataFrame defining blood exchange constraints for the enterocyte
         Index : Exchanged metabolites with the blood (except default AAD where it is exchange reactions)

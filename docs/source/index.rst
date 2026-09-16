@@ -28,6 +28,7 @@ Contents
    installation
    Global_usage/Global_usage
    enterocyte_specific_analysis
+   Extending_to_larger_ecosystems
 
 .. toctree::
    :maxdepth: 2
