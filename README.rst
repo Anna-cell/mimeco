@@ -8,7 +8,7 @@ The concept of the methodology is described in Lambert, A., Budinich, M., Mahé,
 
 Note : A technical note dedicated to this package will be published
 
-.. image:: mimeco/resources/MIMEco_logo.png
+.. image:: mimeco/resources/MIMEco_logo_blue.png
   :width: 500
   :alt: MIMEco logo
 
@@ -31,3 +31,4 @@ Installation
 ~~~~~~~~~~~~~
 
 MIMEco is available on pyPI. You can install it with :code:`pip install mimeco`
+A more detailed instalation guide, including dependancies installations, is described in the `documentation <https://mimeco.readthedocs.io/en/latest/installation.html#installing-gurobi>`_

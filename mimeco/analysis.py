@@ -299,7 +299,7 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
     sol_mofba = utils.mo_fba(host, model, metabolic_dict, medium_dict)[0] #get multi-objective solution (pareto front)
     xy, maxi_host, maxi_model = utils.pareto_parsing(sol_mofba, solo_growth_host, solo_growth_model) #parse and normalize pareto front
     interaction_score = utils.infer_interaction_score(xy) #measure AUC of Pareto front, translates it in quantitative interaction prediction
-    interaction_type = utils.infer_interaction_type(interaction_score, maxi_host, maxi_model,solo_growth_host, solo_growth_model) #infers interaction type from pareto front's shape.
+    interaction_type = utils.infer_interaction_type(xy, interaction_score, maxi_host, maxi_model, solo_growth_host, solo_growth_model) #infers interaction type from pareto front's shape.
     if plot: #Visualize Pareto front
         model2_id = model.id
         utils.pareto_plot(xy, "enterocyte", model2_id)
