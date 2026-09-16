@@ -31,3 +31,4 @@ Installation
 ~~~~~~~~~~~~~
 
 MIMEco is available on pyPI. You can install it with :code:`pip install mimeco`
+A more detailed instalation guide, including dependancies installations, is described in the `documentation <https://mimeco.readthedocs.io/en/latest/installation.html#installing-gurobi>`_
