@@ -32,7 +32,7 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
-        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"partially_constrained"** : They are made available with a lower bound of undescribed_met_lb (default -0.1 mmol.gDW^-1.h^-1)
         **"as_is"** : Their availability is the same as in the original inputted model. 
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
@@ -55,7 +55,7 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
     if medium is None:
         warnings.warn("You have not specified a medium composition. The model's bounds will be constrained based on the inputted model's exchange constraints")
     elif undescribed_metabolites_constraint == None:
-        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of -1 will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
+        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of "+str(undescribed_met_lb)+" (undescribed_met_lb) will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
         undescribed_metabolites_constraint = "partially_constrained"
     metabolic_dict = utils.create_ecosystem_metabolic_dict(model1, model2)
         #Infers maximal objective value of both models seperately, in the given medium.
@@ -77,9 +77,11 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
     medium_dict = {**constrained_medium_dict1, **constrained_medium_dict2} #Translate medium constraint for mocba
     # mocba will create new exchange reaction exterior to both models. the original exchange reactions, if restrained, will prevent 
     #exchanges between organisms. Here we unconstrain them.
-    model1 = utils.unrestrain_medium(model1)
-    model2 = utils.unrestrain_medium(model2)
-    sol_mofba = utils.mo_fba(model1, model2, metabolic_dict, medium_dict)[0] #get multi-objective solution (pareto front)
+    # mo_fba opens the exchange reactions of both models (unrestrain_medium) to build the ecosystem model.
+    # Inside 'with', these changes are undone afterwards: the inputted models keep their original bounds,
+    # so that calling the function twice gives the same result.
+    with model1, model2:
+        sol_mofba = utils.mo_fba(model1, model2, metabolic_dict, medium_dict)[0] #get multi-objective solution (pareto front)
     xy, maxi_model1, maxi_model2 = utils.pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2) #parse and normalize pareto front
     interaction_score = utils.infer_interaction_score(xy) #measure AUC of Pareto front, translates it in quantitative interaction prediction
     interaction_type = utils.infer_interaction_type(xy, interaction_score, maxi_model1, maxi_model2,solo_growth_model1, solo_growth_model2) #infers interaction type from pareto front's shape.
@@ -122,7 +124,7 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
-        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"partially_constrained"** : They are made available with a lower bound of undescribed_met_lb (default -0.1 mmol.gDW^-1.h^-1)
         **"as_is"** : Their availability is the same as in the original inputted model. 
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
@@ -165,7 +167,7 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
     if medium is None:
         warnings.warn("You have not specified a medium composition. The model's bounds will be constrained based on the inputted model's exchange constraints")
     elif undescribed_metabolites_constraint == None:
-        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of -1 will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
+        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of "+str(undescribed_met_lb)+" (undescribed_met_lb) will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
         undescribed_metabolites_constraint = "partially_constrained"
     metabolic_dict = utils.create_ecosystem_metabolic_dict(model1, model2)
     #Infers maximal objective value of both models seperately, in the given mdeium.
@@ -187,9 +189,11 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
     medium_dict = {**constrained_medium_dict1, **constrained_medium_dict2} #Translate medium constraint for mocba
     # mocba will create new exchange reaction exterior to both models. the original exchange reactions, if restrained, will prevent 
     #exchanges between organisms. Here we unconstrain them.
-    model1 = utils.unrestrain_medium(model1)
-    model2 = utils.unrestrain_medium(model2)
-    sol_mofba, ecosys = utils.mo_fba(model1, model2, metabolic_dict, medium_dict) #get multi-objective solution (pareto front), and ecosystem model from mocba 
+    # mo_fba opens the exchange reactions of both models (unrestrain_medium) to build the ecosystem model.
+    # Inside 'with', these changes are undone afterwards: the inputted models keep their original bounds,
+    # so that calling the function twice gives the same result.
+    with model1, model2:
+        sol_mofba, ecosys = utils.mo_fba(model1, model2, metabolic_dict, medium_dict) #get multi-objective solution (pareto front), and ecosystem model from mocba 
     xy, maxi_model1, maxi_model2 = utils.pareto_parsing(sol_mofba, solo_growth_model1, solo_growth_model2) #parse and normalize pareto front
     cobra_ecosys = utils.mocba_to_cobra(ecosys) #Translate mocba ecosystem into cobra.Model
     cobra_ecosys.solver = solver 
@@ -227,7 +231,7 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
-        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"partially_constrained"** : They are made available with a lower bound of undescribed_met_lb (default -0.1 mmol.gDW^-1.h^-1)
         **"as_is"** : Their availability is the same as in the original inputted model.
     solver : string
         solver supported by the cobra toolbox. "cplex" or "gurobi" are recommended but require prior installation.
@@ -255,7 +259,7 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
     if medium is None:
         warnings.warn("You have not specified a medium composition. The model's bounds will be constrained based on the inputted model's exchange constraints")
     elif undescribed_metabolites_constraint == None:
-        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of -1 will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
+        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of "+str(undescribed_met_lb)+" (undescribed_met_lb) will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
         undescribed_metabolites_constraint = "partially_constrained"
     namespace, suffixe = utils.find_namespace(model)
     if namespace == "bigg":
@@ -271,11 +275,11 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
     host = enterocyte_specific_utils.restrain_blood_exchange_enterocyte(host)
     #Infers maximal objective value of both models seperately, in the given medium.
     with host:
-        host, constrained_medium_dict1 = utils.restrain_medium(host, medium, undescribed_metabolites_constraint)
+        host, constrained_medium_dict1 = utils.restrain_medium(host, medium, undescribed_metabolites_constraint, undescribed_met_lb)
         solo_growth_host = host.optimize().objective_value
         print(solo_growth_host)
     with model:
-        model, constrained_medium_dict2 = utils.restrain_medium(model, medium, undescribed_metabolites_constraint)
+        model, constrained_medium_dict2 = utils.restrain_medium(model, medium, undescribed_metabolites_constraint, undescribed_met_lb)
         solo_growth_model = model.optimize().objective_value
         print(solo_growth_model)
     if solo_growth_host == solo_growth_model == 0:
@@ -294,9 +298,9 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
         medium_dict["o2(e)"] = (0, host.reactions.get_by_id("EX_o2(e)").upper_bound) #O2 can only appear by enterocyte secretion.
     # mocba will create new exchange reaction exterior to both models. the original exchange reactions, if restrained, will prevent 
     #exchanges between organisms. Here we unconstrain them.
-    host = utils.unrestrain_medium(host)
-    model = utils.unrestrain_medium(model)
-    sol_mofba = utils.mo_fba(host, model, metabolic_dict, medium_dict)[0] #get multi-objective solution (pareto front)
+    # mo_fba opens the exchange reactions (unrestrain_medium); inside 'with', the inputted model keeps its bounds.
+    with model:
+        sol_mofba = utils.mo_fba(host, model, metabolic_dict, medium_dict)[0] #get multi-objective solution (pareto front)
     xy, maxi_host, maxi_model = utils.pareto_parsing(sol_mofba, solo_growth_host, solo_growth_model) #parse and normalize pareto front
     interaction_score = utils.infer_interaction_score(xy) #measure AUC of Pareto front, translates it in quantitative interaction prediction
     interaction_type = utils.infer_interaction_type(xy, interaction_score, maxi_host, maxi_model, solo_growth_host, solo_growth_model) #infers interaction type from pareto front's shape.
@@ -328,7 +332,7 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
-        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"partially_constrained"** : They are made available with a lower bound of undescribed_met_lb (default -0.1 mmol.gDW^-1.h^-1)
         **"as_is"** : Their availability is the same as in the original inputted model.
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
@@ -369,7 +373,7 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     if medium is None:
         warnings.warn("You have not specified a medium composition. The model's bounds will be constrained based on the inputted model's exchange constraints")
     elif undescribed_metabolites_constraint == None:
-        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of -1 will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
+        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of "+str(undescribed_met_lb)+" (undescribed_met_lb) will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
         undescribed_metabolites_constraint = "partially_constrained"
     namespace, suffixe = utils.find_namespace(model)
     if namespace == "bigg":
@@ -387,11 +391,11 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     host = enterocyte_specific_utils.restrain_blood_exchange_enterocyte(host)   # namespace is found inside the function
     #Infers maximal objective value of both models seperately, in the given medium.
     with host:
-        host, constrained_medium_dict1 = utils.restrain_medium(host, medium, undescribed_metabolites_constraint)
+        host, constrained_medium_dict1 = utils.restrain_medium(host, medium, undescribed_metabolites_constraint, undescribed_met_lb)
         solo_growth_host = host.optimize().objective_value
         print(solo_growth_host)
     with model:
-        model, constrained_medium_dict2 = utils.restrain_medium(model, medium, undescribed_metabolites_constraint)
+        model, constrained_medium_dict2 = utils.restrain_medium(model, medium, undescribed_metabolites_constraint, undescribed_met_lb)
         solo_growth_model = model.optimize().objective_value
         print(solo_growth_model)
     if solo_growth_host == solo_growth_model == 0:
@@ -410,9 +414,9 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
         medium_dict["o2(e)"] = (0, host.reactions.get_by_id("EX_o2(e)").upper_bound) #O2 can only appear by enterocyte secretion.
     # mocba will create new exchange reaction exterior to both models. the original exchange reactions, if restrained, will prevent 
     #exchanges between organisms. Here we unconstrain them.
-    host = utils.unrestrain_medium(host)
-    model = utils.unrestrain_medium(model)
-    sol_mofba, ecosys = utils.mo_fba(host, model, metabolic_dict, medium_dict) #get multi-objective solution (pareto front), and ecosystem model from mocba 
+    # mo_fba opens the exchange reactions (unrestrain_medium); inside 'with', the inputted model keeps its bounds.
+    with model:
+        sol_mofba, ecosys = utils.mo_fba(host, model, metabolic_dict, medium_dict) #get multi-objective solution (pareto front), and ecosystem model from mocba 
     xy, maxi_host, maxi_model = utils.pareto_parsing(sol_mofba, solo_growth_host, solo_growth_model) #parse and normalize pareto front
     cobra_ecosys = utils.mocba_to_cobra(ecosys) #Translate mocba ecosystem into cobra.Model
     cobra_ecosys.solver = solver 
@@ -455,7 +459,7 @@ def extract_pairwize_model(model1, model2, solver, model1_biomass_id, model2_bio
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
-        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"partially_constrained"** : They are made available with a lower bound of undescribed_met_lb (default -0.1 mmol.gDW^-1.h^-1)
         **"as_is"** : Their availability is the same as in the original inputted model. 
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
@@ -467,7 +471,7 @@ def extract_pairwize_model(model1, model2, solver, model1_biomass_id, model2_bio
     if medium is None:
         warnings.warn("You have not specified a medium composition. The model's bounds will be constrained based on the inputted model's exchange constraints")
     elif undescribed_metabolites_constraint == None:
-        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of -1 will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
+        warnings.warn("You did not define a level of constraint for metabolites not described in the inputted medium. By default, the 'partially_constrained' option will be selected and a lower bound of "+str(undescribed_met_lb)+" (undescribed_met_lb) will be applied. Define the argument 'undescribed_metabolites_constraint' to chose a more suitable constraint.")
         undescribed_metabolites_constraint = "partially_constrained"
     metabolic_dict = utils.create_ecosystem_metabolic_dict(model1, model2)
     #Infers maximal objective value of both models seperately, in the given mdeium.
@@ -491,8 +495,10 @@ def extract_pairwize_model(model1, model2, solver, model1_biomass_id, model2_bio
     medium_dict = {**constrained_medium_dict1, **constrained_medium_dict2} #Translate medium constraint for mocba
     # mocba will create new exchange reaction exterior to both models. the original exchange reactions, if restrained, will prevent 
     #exchanges between organisms. Here we unconstrain them.
-    model1 = utils.unrestrain_medium(model1)
-    model2 = utils.unrestrain_medium(model2)
-    sol_mofba, ecosys = utils.mo_fba(model1, model2, metabolic_dict, medium_dict) #get multi-objective solution (pareto front), and ecosystem model from mocba 
+    # mo_fba opens the exchange reactions of both models (unrestrain_medium) to build the ecosystem model.
+    # Inside 'with', these changes are undone afterwards: the inputted models keep their original bounds,
+    # so that calling the function twice gives the same result.
+    with model1, model2:
+        sol_mofba, ecosys = utils.mo_fba(model1, model2, metabolic_dict, medium_dict) #get multi-objective solution (pareto front), and ecosystem model from mocba 
     cobra_ecosys = utils.mocba_to_cobra(ecosys) #Translate mocba ecosystem into cobra.Model
     return cobra_ecosys

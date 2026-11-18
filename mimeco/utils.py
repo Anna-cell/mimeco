@@ -56,7 +56,7 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint, undescrib
     undescribed_metabolites_constraint : string ("blocked", "partially_constrained" or "as_is"). 
         How strictly constrained are the medium metabolites for which the flux is not described in the medium dataframe.
         **"blocked"** : They are not available in the medium at all (can result in model unable to grow)
-        **"partially_constrained"** : They are made available with an influx in the medium of 1 mmol.gDW^-1.h^-1
+        **"partially_constrained"** : They are made available with a lower bound of undescribed_met_lb (default -0.1 mmol.gDW^-1.h^-1)
         **"as_is"** : Their availability is the same as in the original inputted model.
     undescribed_met_lb : negative float, optional
         Lower bound assigned to metabolites exchanges reactions that are not described in the given medium, when the "undescribed_metabolic_constraint" argument is set to "partially_constrained".
@@ -70,6 +70,16 @@ def restrain_medium(model, medium, undescribed_metabolites_constraint, undescrib
         Controls fluxes of metabolites entering the emodels external environment.
     """
 
+    # Unknown option (e.g. a typo such as "partially constrained") -> error, instead of being silently ignored
+    valid_options = ["blocked", "partially_constrained", "as_is"]
+    if undescribed_metabolites_constraint is not None and undescribed_metabolites_constraint not in valid_options:
+        raise ValueError("undescribed_metabolites_constraint must be one of "+str(valid_options)+
+                         ", not '"+str(undescribed_metabolites_constraint)+"'")
+    # Without a medium, the models' own exchange bounds are used: the option and undescribed_met_lb do nothing
+    if medium is None and undescribed_metabolites_constraint is not None:
+        warnings.warn("No medium was given: the models' own exchange bounds are used, and "
+                      "undescribed_metabolites_constraint ('"+undescribed_metabolites_constraint+"') and "
+                      "undescribed_met_lb ("+str(undescribed_met_lb)+") are ignored.")
     constrained_medium_dict = {}
     for reac in model.exchanges:
         old_bounds = reac.bounds
