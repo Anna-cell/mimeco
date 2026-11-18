@@ -92,7 +92,7 @@ def interaction_score_and_type(model1, model2, medium = None, undescribed_metabo
         model1_id = model1.id
         model2_id = model2.id
         utils.pareto_plot(xy, model1_id, model2_id)
-    if retrieve_data="all":
+    if retrieve_data=="all":
         return interaction_score, interaction_type, xy
     else:
         return interaction_score, interaction_type
@@ -153,7 +153,7 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
     potential_crossfeeding : pandas.dataframe
         **columns** : metabolite_id model_benefiting, proportion_exchange (proportion of samples featuring inverse secretion/uptake for a same metabolite),
         proportion_model1_to_model2 (proportion of samples with metabolite exchange from model1 to model2), proportion_model2_to_model1 (proportion of samples with metabolite exchange from model2 to model1),
-        correlation_obj_model1, correlation_obj_model2
+        correlation_obj_model1, correlation_obj_model2, reaction_id (exchange reaction id in model1, used to find the exchange fluxes in the sampling)
     sampling_data : pandas dataframe
         Dataframe based on the sampling, resulting in each row being a sample.
         **if retrieve_data == "selection"** 
@@ -206,7 +206,7 @@ def crossfed_metabolites(model1, model2, solver, model1_biomass_id, model2_bioma
     if retrieve_data == "all":
         return potential_crossfeeding, sampling
     if retrieve_data == "selection":
-        sampling_data = utils.extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, model2_id)
+        sampling_data = utils.extract_sampling_data(sampling, potential_crossfeeding, model1_id, model2_id)
         return potential_crossfeeding, sampling_data
     else:
         return potential_crossfeeding
@@ -303,7 +303,7 @@ def enterocyte_interaction_score_and_type(model, solver, medium = None, undescri
     if plot: #Visualize Pareto front
         model2_id = model.id
         utils.pareto_plot(xy, "enterocyte", model2_id)
-    if retrieve_data="all":
+    if retrieve_data=="all":
         return interaction_score, interaction_type, xy
     else:
         return interaction_score, interaction_type
@@ -357,7 +357,7 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     potential_crossfeeding : pandas.dataframe
         **columns** : metabolite_id model_benefiting, proportion_exchange (proportion of samples featuring inverse secretion/uptake for a same metabolite),
         proportion_model1_to_model2 (proportion of samples with metabolite exchange from model1 to model2), proportion_model2_to_model1 (proportion of samples with metabolite exchange from model2 to model1),
-        correlation_obj_model1, correlation_obj_model2
+        correlation_obj_model1, correlation_obj_model2, reaction_id (exchange reaction id in model1, used to find the exchange fluxes in the sampling)
     sampling_data : pandas dataframe
         Dataframe based on the sampling, resulting in each row being a sample.
         **if retrieve_data == "selection"**
@@ -384,7 +384,7 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
     host_biomass_id = 'biomass_reactionIEC01b'
     metabolic_dict = utils.create_ecosystem_metabolic_dict(host, model)
     #Restrain enterocyte exchanges with the blood compartment.
-    host = enterocyte_specific_utils.restrain_blood_exchange_enterocyte(host, namespace = namespace)
+    host = enterocyte_specific_utils.restrain_blood_exchange_enterocyte(host)   # namespace is found inside the function
     #Infers maximal objective value of both models seperately, in the given medium.
     with host:
         host, constrained_medium_dict1 = utils.restrain_medium(host, medium, undescribed_metabolites_constraint)
@@ -424,12 +424,12 @@ def enterocyte_crossfed_metabolites(model, solver, model_biomass_id, medium = No
                                                 model2_biomass_id = host_biomass_id, exchange_correlation = exchange_correlation,
                                                 biomass_correlation = biomass_correlation)
     if plot: #Visualize pareto front
-        utils.plot_exchange(model1, sampling, potential_crossfeeding, host.id, model_id, namespace = namespace)
+        utils.plot_exchange(model, sampling, potential_crossfeeding, model_id, host.id)
     if retrieve_data == "all":
         sampling_data = sampling
         return potential_crossfeeding, sampling_data
     if retrieve_data == "selection":
-        relevant_data = utils.extract_relevant_data(sampling, potential_crossfeeding, model1_id, model2_id, namespace = namespace)
+        sampling_data = utils.extract_sampling_data(sampling, potential_crossfeeding, model_id, host.id)
         return potential_crossfeeding, sampling_data
     else:
         return potential_crossfeeding

@@ -436,28 +436,6 @@ def oppositeSigns(x, y): #returns boolean. 1 if x y opposite sign, 0 otherwhise
         return (y < 0)
     else:
         return False
- 
-def reac_to_met_id(reac, model_id):
-    """
-    Returns exchanged metabolite id from an exchange reaction.
-
-    Parameters
-    ----------
-    reac : cobra.Reaction.id
-    model_id : string
-        Model denomination in the cobra.Model
-
-    Returns
-    -------
-    met : string
-        metabolite id
-    """
-    #TODO : add a "suffixe" parameter that enable the user to use their own suffixe, to adapt to any namespace. 
-    met = reac.replace("_e:"+model_id, "") #BiGG namespace
-    met = met.replace("(e):"+model_id, "") #Agora namespace
-    met = met.replace("_e0:"+model_id, "") #gapseq namespace
-    met = met.replace("EX_", "")
-    return met
     
 def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id, model1_biomass_id, model2_biomass_id, exchange_correlation = 0.5, biomass_correlation = 0.8, lower_exchange_proportion = 0.3):
     """
@@ -494,12 +472,13 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
     potential_crossfeeding : pandas.dataframe
         **columns** : metabolite_id model_benefiting, proportion_exchange (proportion of samples featuring inverse secretion/uptake for a same metabolite),
         proportion_model1_to_model2 (proportion of samples with metabolite exchange from model1 to model2), proportion_model2_to_model1 (proportion of samples with metabolite exchange from model2 to model1),
-        correlation_obj_model1, correlation_obj_model2
+        correlation_obj_model1, correlation_obj_model2, reaction_id (exchange reaction id in model1, used to find the exchange fluxes in the sampling)
         
     """
 
     potential_crossfeeding = {}
     metabolite_id = []
+    reaction_id = []
     model_benefiting = []
     proportion_exchange_list = []
     proportion_model1_to_model2 = []
@@ -509,7 +488,7 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
     for ex_reac in model1.exchanges:     
         ecosys_reac_id_model1 = ex_reac.id+":"+model1.id
         ecosys_reac_id_model2 = ex_reac.id+":"+model2_id
-        met_id = reac_to_met_id(reac = ecosys_reac_id_model1, model_id = model1.id)
+        met_id = no_compartment_id(list(ex_reac.metabolites)[0].id)[0]
         #if a metabolite has an exchange reaction in both models
         if ecosys_reac_id_model1 in correlation_reactions.index and ecosys_reac_id_model2 in correlation_reactions.index:
             #if both exchange reactions have at least one non-null flux value among all samples.
@@ -535,6 +514,7 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
                     if proportion_exchange > lower_exchange_proportion and met_id not in potential_crossfeeding.keys():
                         #Fill lists for final dataframe, changing exchange results to proportions
                         metabolite_id.append(met_id)
+                        reaction_id.append(ex_reac.id)
                         proportion_exchange_list.append(proportion_exchange)
                         proportion_model1_to_model2.append(model1_to_model2/len(sampling))
                         proportion_model2_to_model1.append(model2_to_model1/len(sampling))
@@ -565,6 +545,7 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
                     if proportion_exchange > lower_exchange_proportion and met_id not in potential_crossfeeding.keys():
                         #Fill lists for final dataframe, changing exchange results to proportions
                         metabolite_id.append(met_id)
+                        reaction_id.append(ex_reac.id)
                         proportion_exchange_list.append(proportion_exchange)
                         proportion_model1_to_model2.append(model1_to_model2/len(sampling))
                         proportion_model2_to_model1.append(model2_to_model1/len(sampling))
@@ -574,10 +555,11 @@ def crossfed_mets(model1, sampling, correlation_reactions, model1_id, model2_id,
                         model_benefiting.append("model2")
     potential_crossfeeding = pd.DataFrame({"metabolite_id":metabolite_id, "model_benefiting":model_benefiting, "proportion_exchange": proportion_exchange_list, 
                                             "proportion_model1_to_model2":proportion_model1_to_model2, "proportion_model2_to_model1": proportion_model2_to_model1, 
-                                            "correlation_obj_model1": correlation_with_biomass_model1, "correlation_obj_model2":correlation_with_biomass_model2})
+                                            "correlation_obj_model1": correlation_with_biomass_model1, "correlation_obj_model2":correlation_with_biomass_model2,
+                                            "reaction_id": reaction_id})
     return potential_crossfeeding
 
-def extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, model2_id):
+def extract_sampling_data(sampling, potential_crossfeeding, model1_id, model2_id):
     """
     Extracts sampling data from predicted exchanged metabolites, and models objective values for each sample.
 
@@ -606,15 +588,17 @@ def extract_sampling_data(model1, sampling, potential_crossfeeding, model1_id, m
 
     obj_value_model1 = []
     obj_value_model2 = []
-    namespace, suffixe = find_namespace(model1)
-    for i in sampling.index:      
+    # Objective values of both models, read from the sample names, e.g. '0.52_1.10' -> 0.52 and 1.10
+    for i in sampling.index:
         obj_value_model1.append(float(i.split("_", 1)[0]))
         obj_value_model2.append(float(i.split("_", 1)[1]))
-    sampling_data = pd.DataFrame({"obj_value_model1" : obj_value_model1, 
+    sampling_data = pd.DataFrame({"obj_value_model1" : obj_value_model1,
                                   "obj_value_model2" : obj_value_model2})
-    for metabolite in potential_crossfeeding["metabolite_id"]:
-        ecosys_reac_id_model1 = "EX_"+metabolite+suffixe+":"+model1_id
-        ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
+    # Use the exchange reaction id stored by crossfed_mets instead of rebuilding it from the metabolite id,
+    # so that any namespace works (BiGG, AGORA, AGORA2 JSON, gapseq).
+    for reaction in potential_crossfeeding["reaction_id"]:
+        ecosys_reac_id_model1 = reaction+":"+model1_id
+        ecosys_reac_id_model2 = reaction+":"+model2_id
         sampling_data[ecosys_reac_id_model1] = sampling[ecosys_reac_id_model1].values
         sampling_data[ecosys_reac_id_model2] = sampling[ecosys_reac_id_model2].values
     return sampling_data
@@ -642,7 +626,6 @@ def plot_exchange(model1, sampling, potential_crossfeeding, model1_id, model2_id
 
     max_model1 = 0
     max_model2 = 0
-    namespace, suffixe = find_namespace(model1)
     for i in sampling.index:      
         obj_value_model1 = float(i.split("_", 1)[0])
         obj_value_model2 = float(i.split("_", 1)[1])  
@@ -652,14 +635,16 @@ def plot_exchange(model1, sampling, potential_crossfeeding, model1_id, model2_id
         if obj_value_model2 > max_model2:
             max_model2 = obj_value_model2
             max_ind_model2 = i
-    for metabolite in potential_crossfeeding["metabolite_id"]:
-        ecosys_reac_id_model1 = "EX_"+metabolite+suffixe+":"+model1_id
-        ecosys_reac_id_model2 = "EX_"+metabolite+suffixe+":"+model2_id
+    for i in potential_crossfeeding.index:
+        metabolite = potential_crossfeeding.loc[i, "metabolite_id"]      # used in the plot title
+        reaction = potential_crossfeeding.loc[i, "reaction_id"]          # e.g. 'EX_ala_L[e]'
+        ecosys_reac_id_model1 = reaction+":"+model1_id
+        ecosys_reac_id_model2 = reaction+":"+model2_id
         a = sampling[ecosys_reac_id_model1]
         b = sampling[ecosys_reac_id_model2]
         plt.plot(a, "#c90016ff", label = model1_id)
         plt.plot(b, "#0072b2ff", label = model2_id)
-        plt.axvline(x = max_ind_model1, color = "c90016ff", linestyle=':')
+        plt.axvline(x = max_ind_model1, color = "#c90016ff", linestyle=':')
         plt.axvline(x = max_ind_model2, color = "#0072b2ff", linestyle=':')
         plt.tick_params(
         axis='x',          # changes apply to the x-axis
